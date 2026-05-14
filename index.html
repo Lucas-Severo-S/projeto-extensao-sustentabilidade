@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoBot: Missão Sustentável</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #eef2f3; margin: 0; padding: 20px; }
+        #game-container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        button { background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.3s; margin-top: 10px;}
+        button:hover { background: #218838; }
+        #canvas { border: 4px solid #343a40; background: #fff; display: block; margin: 20px auto; border-radius: 10px; cursor: crosshair; }
+        .quiz-opt { display: block; width: 100%; margin: 10px 0; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; cursor: pointer; text-align: left; background: #f8f9fa; }
+        .quiz-opt:hover { background: #e9ecef; }
+        .score-board { font-size: 20px; font-weight: bold; color: #495057; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1>EcoBot 🤖</h1>
+        <p>Aprenda a salvar o meio ambiente e a saúde descartando lixo eletrônico corretamente!</p>
+        <button onclick="startQuiz()">Começar Desafio</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <h2 id="question">Carregando pergunta...</h2>
+        <div id="options"></div>
+        <p>Progresso: <span id="progress">0</span>/10</p>
+    </div>
+
+    <div id="play-screen" class="hidden">
+        <h2>Missão: Colete o Lixo Eletrônico!</h2>
+        <p>Mova o robô com o mouse ou setas do teclado para capturar os itens.</p>
+        <canvas id="canvas" width="400" height="400"></canvas>
+        <p class="score-board">Pontos: <span id="score">0</span></p>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>Excelente Trabalho!</h2>
+        <p>Você completou o desafio de extensão com sucesso.</p>
+        <p class="score-board">Pontuação Total: <span id="final-score">0</span></p>
+        <hr>
+        <p><strong>Importante:</strong> Para validar sua participação, preencha o formulário:</p>
+        <button onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeQyO5vXJvM9lJ5V4F9N_o7r0X3J3_Vv9JzWJzWJzWJzWJzWA/viewform', '_blank')" style="background: #007bff;">Preencher Formulário de Impacto</button>
+    </div>
+</div>
+
+<script>
+    // As 10 perguntas focadas em Meio Ambiente e Saúde
+    const questions = [
+        { q: "O que é lixo eletrônico?", options: ["Papel e restos de comida", "Qualquer dispositivo eletrônico sem utilidade", "Apenas pilhas velhas"], a: 1 },
+        { q: "Qual destes metais é tóxico e comum em baterias?", options: ["Ferro", "Chumbo/Mercúrio", "Alumínio"], a: 1 },
+        { q: "Onde deve ser descartado o lixo eletrônico?", options: ["Lixo comum", "Pontos de coleta específicos", "Enterrado no quintal"], a: 1 },
+        { q: "O que o descarte incorreto causa à saúde?", options: ["Melhora a imunidade", "Danos neurológicos e renais", "Não causa problemas"], a: 1 },
+        { q: "O plástico de um teclado demora quanto tempo para se decompor?", options: ["5 anos", "Mais de 400 anos", "50 anos"], a: 1 },
+        { q: "O que significa 'Mineração Urbana'?", options: ["Recuperar metais de eletrônicos velhos", "Cavar túneis na cidade", "Construir prédios"], a: 0 },
+        { q: "Uma bateria inchada deve ser jogada no fogo?", options: ["Sim, para destruir", "Nunca, pode explodir e poluir", "Apenas se estiver fria"], a: 1 },
+        { q: "Qual a melhor forma de reduzir o impacto?", options: ["Comprar sempre o modelo novo", "Reutilizar e reciclar componentes", "Guardar tudo no sótão"], a: 1 },
+        { q: "O que é obsolescência programada?", options: ["Produtos feitos para durar pouco", "Treino de robótica", "Limpeza de circuitos"], a: 0 },
+        { q: "O lixo eletrônico pode contaminar a água?", options: ["Não, o metal não derrete", "Sim, através de infiltração no solo", "Apenas se for jogado no mar"], a: 1 }
+    ];
+
+    let currentQ = 0;
+    let quizPoints = 0;
+
+    function startQuiz() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[currentQ];
+        document.getElementById('question').innerText = q.q;
+        const optDiv = document.getElementById('options');
+        optDiv.innerHTML = '';
+        q.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-opt';
+            btn.innerText = opt;
+            btn.onclick = () => nextQuestion(i === q.a);
+            optDiv.appendChild(btn);
+        });
+        document.getElementById('progress').innerText = currentQ + 1;
+    }
+
+    function nextQuestion(isCorrect) {
+        if(isCorrect) quizPoints += 20;
+        currentQ++;
+        if(currentQ < questions.length) showQuestion();
+        else startCollectGame();
+    }
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let robotX = 175;
+    let gameScore = 0;
+    let items = [];
+
+    function startCollectGame() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('play-screen').classList.remove('hidden');
+        gameLoop();
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Desenho do Robô (Retângulo Verde)
+        ctx.fillStyle = "#28a745"; 
+        ctx.fillRect(robotX, 350, 60, 40);
+
+        // Criar itens caindo
+        if(Math.random() < 0.03) items.push({x: Math.random()*370, y: 0, t: Math.random() > 0.3 ? 'good' : 'bad'});
+
+        items.forEach((item, i) => {
+            item.y += 4;
+            ctx.fillStyle = item.t === 'good' ? "#ffc107" : "#dc3545"; 
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, 10, 0, Math.PI*2);
+            ctx.fill();
+
+            // Lógica de Colisão
+            if(item.y > 350 && item.x > robotX && item.x < robotX + 60) {
+                gameScore += item.t === 'good' ? 10 : -5;
+                items.splice(i, 1);
+                document.getElementById('score').innerText = gameScore;
+            }
+        });
+
+        if(gameScore < 100) requestAnimationFrame(gameLoop);
+        else finishGame();
+    }
+
+    // Controles por Mouse
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        robotX = e.clientX - rect.left - 30;
+    });
+
+    // Controles por Teclado
+    document.addEventListener('keydown', e => {
+        if(e.key === 'ArrowLeft' && robotX > 0) robotX -= 25;
+        if(e.key === 'ArrowRight' && robotX < 340) robotX += 25;
+    });
+
+    function finishGame() {
+        document.getElementById('play-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = quizPoints + gameScore;
+    }
+</script>
+</body>
+</html>
