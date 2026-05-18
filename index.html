@@ -35,7 +35,6 @@
 
         canvas { display: block; }
 
-        /* Telas de Interface */
         .overlay {
             position: absolute;
             top: 0;
@@ -72,7 +71,6 @@
             box-shadow: 0 0 30px var(--neon-green);
         }
 
-        /* HUD (Interface de jogo) */
         #hud {
             position: absolute;
             top: 10px;
@@ -87,8 +85,7 @@
 
         .stat { background: rgba(0, 243, 255, 0.2); padding: 10px; border-left: 4px solid var(--neon-blue); }
 
-        /* Quiz */
-        #quiz-container { display: none; }
+        #quiz-screen { display: none; }
         .quiz-option {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid white;
@@ -108,27 +105,27 @@
 <div id="game-container">
     <div id="hud" class="hidden">
         <div class="stat">PONTOS: <span id="score-val">0</span></div>
-        <div class="stat">MODO: <span id="mode-name" style="color: yellow;">E-WASTE</span></div>
+        <div class="stat">MODO: <span id="mode-name" style="color: #ff8c00;">E-WASTE</span></div>
         <div class="stat">FASE: <span id="level-val">1</span></div>
     </div>
 
     <div id="start-screen" class="overlay">
         <h1>ECOBOT 2026</h1>
-        <p>O mundo está sufocado por lixo eletrônico! <br> Ajude o EcoBot a separar resíduos tóxicos (Chumbo e Mercúrio) do lixo comum.</p>
-        <p style="font-size: 0.9rem; color: var(--neon-blue);">Use as SETAS para mover | ESPAÇO para trocar o recipiente</p>
+        <p>Ajude o EcoBot a separar resíduos eletrônicos tóxicos do lixo comum!</p>
+        <p style="font-size: 0.9rem; color: var(--neon-blue);">SETAS para mover | ESPAÇO para trocar o recipiente</p>
         <button onclick="startGame()">Iniciar Missão</button>
     </div>
 
     <div id="quiz-screen" class="overlay hidden">
-        <h2 id="quiz-question" style="color: var(--neon-blue);">Pergunta de Sustentabilidade</h2>
+        <h2 id="quiz-question" style="color: var(--neon-blue);">Pergunta</h2>
         <div id="quiz-options"></div>
     </div>
 
     <div id="end-screen" class="overlay hidden">
         <h1 id="end-title">MISSÃO CUMPRIDA!</h1>
-        <p id="end-msg">Você separou os resíduos com sucesso.</p>
-        <button onclick="window.open('URL_DO_SEU_GOOGLE_FORMS')">Responder Pesquisa (Obrigatório)</button>
-        <button onclick="location.reload()" style="margin-top: 10px; font-size: 1rem;">Jogar Novamente</button>
+        <p id="end-msg">Você ajudou a salvar o planeta.</p>
+        <button onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeS-xH2h_Pq6V-N1S7T3-M8E5_V_G_T_V_G_T_V_G/viewform')">Responder Pesquisa</button>
+        <button onclick="location.reload()" style="margin-top: 10px; font-size: 1rem;">Reiniciar</button>
     </div>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -138,29 +135,26 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Configurações do Jogo
     let score = 0;
     let gameActive = false;
     let currentLevel = 1;
     let items = [];
     let frame = 0;
 
-    // Mapeamento de Imagens
     const images = {};
     const imageFiles = {
-        // Robô
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
-        // Recipientes
-        rec_glass: '1.png', rec_plastic: '2.png', rec_metal: '4.png', 
-        rec_organic: '5.png', rec_ewaste: '6.png',
-        // Itens de Lixo
+        rec_glass: '4.png',
+        rec_plastic: '5.png',
+        rec_metal: '2.png',
+        rec_organic: '1.png',
+        rec_ewaste: '6.png',
         ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
         org1: 'pizza.png', org2: 'sorvete.png', org3: 'salada.png', org4: 'ceia-de-natal.png',
-        metal1: 'parafuso.png', metal2: 'lata-de-cerveja.png',
-        glass1: 'garrafa.png', plastic1: 'agua.png'
+        metal1: 'lata-de-cerveja.png', metal2: 'clima.png', 
+        glass1: 'garrafa.png', plastic1: 'água.png'
     };
 
-    // Tipos de Lixo e seus Recipientes correspondentes
     const WASTE_TYPES = {
         EWASTE: { id: 0, imgKey: 'rec_ewaste', name: 'E-WASTE', color: '#ff8c00' },
         ORGANIC: { id: 1, imgKey: 'rec_organic', name: 'ORGÂNICO', color: '#8b4513' },
@@ -172,62 +166,35 @@
     let currentModeIndex = 0;
     const modes = Object.values(WASTE_TYPES);
 
-    // Carregar Imagens
-    let loadedImages = 0;
-    const totalImages = Object.keys(imageFiles).length;
-
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
-        images[key].onload = () => {
-            loadedImages++;
-            if (loadedImages === totalImages) console.log("Todos os recursos carregados.");
-        };
     }
 
-    // Classe do Jogador (EcoBot)
     const player = {
-        x: 350,
-        y: 480,
-        w: 100,
-        h: 100,
-        speed: 8,
-        sprite: 'botFront',
-        moveLeft: false,
-        moveRight: false
+        x: 350, y: 480, w: 100, h: 100, speed: 10,
+        sprite: 'botFront', moveLeft: false, moveRight: false
     };
 
-    // Classe do Item Caindo
     class Trash {
         constructor() {
             this.x = Math.random() * (canvas.width - 50);
             this.y = -50;
-            this.w = 50;
-            this.h = 50;
+            this.w = 50; this.h = 50;
             this.speed = 3 + Math.random() * 3 + currentLevel;
-            
-            // Sorteia o tipo
             const typeKeys = Object.keys(WASTE_TYPES);
             this.type = WASTE_TYPES[typeKeys[Math.floor(Math.random() * typeKeys.length)]];
             
-            // Define a imagem baseada no tipo
             if (this.type === WASTE_TYPES.EWASTE) this.img = images['ewaste' + (Math.random() > 0.5 ? '1' : '2')];
             else if (this.type === WASTE_TYPES.ORGANIC) this.img = images['org' + (Math.floor(Math.random() * 4) + 1)];
             else if (this.type === WASTE_TYPES.METAL) this.img = images['metal' + (Math.random() > 0.5 ? '1' : '2')];
             else if (this.type === WASTE_TYPES.GLASS) this.img = images['glass1'];
             else this.img = images['plastic1'];
         }
-
-        update() {
-            this.y += this.speed;
-        }
-
-        draw() {
-            if (this.img) ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
-        }
+        update() { this.y += this.speed; }
+        draw() { if (this.img) ctx.drawImage(this.img, this.x, this.y, this.w, this.h); }
     }
 
-    // Controles
     window.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft') { player.moveLeft = true; player.sprite = 'botLeft'; }
         if (e.key === 'ArrowRight') { player.moveRight = true; player.sprite = 'botRight'; }
@@ -251,66 +218,44 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true;
-        score = 0;
-        level = 1;
         update();
     }
 
-    // Loop Principal
     function update() {
         if (!gameActive) return;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Movimento do Jogador
         if (player.moveLeft && player.x > 0) player.x -= player.speed;
         if (player.moveRight && player.x < canvas.width - player.w) player.x += player.speed;
-
-        // Desenhar Robô
         ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
-        
-        // Desenhar Ícone do Recipiente Ativo sobre o Robô
         const currentRecImg = images[modes[currentModeIndex].imgKey];
-        if (currentRecImg) ctx.drawImage(currentRecImg, player.x + 25, player.y - 30, 50, 50);
+        if (currentRecImg) ctx.drawImage(currentRecImg, player.x + 25, player.y - 40, 50, 50);
 
-        // Gerar itens
         frame++;
-        if (frame % (Math.max(20, 60 - (currentLevel * 5))) === 0) {
-            items.push(new Trash());
-        }
+        if (frame % 60 === 0) items.push(new Trash());
 
-        // Atualizar Itens
         items.forEach((item, index) => {
             item.update();
             item.draw();
-
-            // Colisão
             if (item.y + item.h > player.y && item.x + item.w > player.x && item.x < player.x + player.w) {
                 if (item.type.id === modes[currentModeIndex].id) {
                     score += 10;
-                    // Trigger de Quiz a cada 100 pontos
-                    if (score > 0 && score % 100 === 0) startQuiz();
+                    if (score % 100 === 0) startQuiz();
                 } else {
                     score -= 5;
                 }
                 items.splice(index, 1);
                 document.getElementById('score-val').innerText = score;
             }
-
-            // Saiu da tela
             if (item.y > canvas.height) items.splice(index, 1);
         });
 
-        // Condição de Vitória (Exemplo: 500 pontos)
         if (score >= 500) endGame(true);
-
         requestAnimationFrame(update);
     }
 
-    // Sistema de Quiz
     const questions = [
         { q: "Qual metal pesado é comum em pilhas e baterias?", a: ["Chumbo", "Alumínio", "Ferro"], correct: 0 },
-        { q: "O que deve ser feito com um teclado quebrado?", a: ["Lixo comum", "Ponto de coleta eletrônico", "Enterrar"], correct: 1 }
+        { q: "Onde descartar um teclado velho?", a: ["Lixo comum", "Ponto de coleta eletrónico", "Enterrar"], correct: 1 }
     ];
 
     function startQuiz() {
@@ -319,7 +264,6 @@
         document.getElementById('quiz-question').innerText = q.q;
         const optionsDiv = document.getElementById('quiz-options');
         optionsDiv.innerHTML = '';
-        
         q.a.forEach((opt, i) => {
             const btn = document.createElement('div');
             btn.className = 'quiz-option';
@@ -339,10 +283,6 @@
         gameActive = false;
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
-        if (!victory) {
-            document.getElementById('end-title').innerText = "TENTE NOVAMENTE";
-            document.getElementById('end-msg').innerText = "O meio ambiente ainda precisa de você.";
-        }
     }
 </script>
 </body>
