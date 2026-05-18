@@ -124,6 +124,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.5s;
+            z-index: 20;
         }
     </style>
 </head>
@@ -144,7 +145,7 @@
 
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>O lixo acelera com o tempo. Prepare-se!</p>
+            <p>O lixo cairá lentamente. <br> Separe o máximo que conseguir!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
@@ -185,10 +186,10 @@
     
     let score = 0; let errors = 0; let gameActive = false;
     let items = []; let frame = 0; 
-    let globalSpeedMultiplier = 0.7; // Começa devagar
+    let globalSpeedMultiplier = 0.25; // DESACELERADO 3x
     let lastSpawnX = 0;
     let lastAccelTime = 0;
-    let currentAccelInterval = 50; // Intervalo inicial de 50s
+    let currentAccelInterval = 50; 
 
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
@@ -233,7 +234,9 @@
             let newX;
             do { newX = Math.random() * (canvas.width - 60); } while (Math.abs(newX - lastSpawnX) < 180); 
             this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
-            this.speed = (2 + Math.random() * 2) * globalSpeedMultiplier;
+            
+            // Velocidade base reduzida internamente também
+            this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
             let typeKey;
@@ -254,7 +257,7 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.7; lastAccelTime = 0; currentAccelInterval = 50;
+        globalSpeedMultiplier = 0.25; lastAccelTime = 0; currentAccelInterval = 50;
         items = []; loop();
     }
 
@@ -268,7 +271,6 @@
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Movimentação
         if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
         else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
         else { player.sprite = 'botFront'; }
@@ -279,20 +281,19 @@
         const currentTime = Math.floor(frame / 60);
         document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
 
-        // LÓGICA DE ACELERAÇÃO GRADATIVA (Conforme solicitado)
+        // LÓGICA DE ACELERAÇÃO (Sincronizada com o seu pedido)
         if (currentTime > 0 && (currentTime - lastAccelTime) >= currentAccelInterval) {
-            globalSpeedMultiplier += 0.15;
+            globalSpeedMultiplier += 0.12; // Aumento sutil
             lastAccelTime = currentTime;
             showAlert();
 
-            // Atualiza o próximo intervalo baseado no tempo total
             if (currentTime >= 150 && currentTime < 190) currentAccelInterval = 40;
             else if (currentTime >= 190 && currentTime < 220) currentAccelInterval = 30;
             else if (currentTime >= 220) currentAccelInterval = 20;
         }
 
-        // Spawn de itens (fica mais frequente conforme acelera)
-        if (frame % Math.max(30, Math.floor(90 / globalSpeedMultiplier)) === 0) {
+        // Spawn de itens proporcional à velocidade
+        if (frame % Math.max(40, Math.floor(100 / (globalSpeedMultiplier * 2))) === 0) {
             items.push(new Trash());
         }
 
@@ -318,7 +319,7 @@
     function endGame() {
         gameActive = false;
         document.getElementById('end-screen').classList.remove('hidden');
-        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo Vivo: ${Math.floor(frame/60)}s`;
+        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo: ${Math.floor(frame/60)}s`;
     }
 </script>
 </body>
