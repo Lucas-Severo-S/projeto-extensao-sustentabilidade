@@ -6,68 +6,24 @@
     <title>EcoBot: Missão Sustentável 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --dark-bg: #050505;
-        }
-        body {
-            margin: 0; background-color: var(--dark-bg); color: white;
-            font-family: 'Roboto', sans-serif; display: flex;
-            justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
-        }
-        #main-container {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 10px; padding: 15px; border: 2px solid var(--neon-blue);
-            background: rgba(10, 10, 25, 0.95); border-radius: 20px;
-            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
-        }
-        #game-area {
-            position: relative; width: 850px; height: 450px;
-            background: linear-gradient(to bottom, #0f0c29, #24243e);
-            border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
-        }
+        :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --dark-bg: #050505; }
+        body { margin: 0; background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #main-container { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px; border: 2px solid var(--neon-blue); background: rgba(10, 10, 25, 0.95); border-radius: 20px; box-shadow: 0 0 40px rgba(0, 243, 255, 0.2); }
+        #game-area { position: relative; width: 850px; height: 450px; background: linear-gradient(to bottom, #0f0c29, #24243e); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
         canvas { display: block; }
-        #bin-panel {
-            width: 850px; display: flex; justify-content: center; gap: 15px;
-            background: rgba(0, 0, 0, 0.8); padding: 15px 0;
-            border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue);
-        }
-        .bin-btn {
-            display: flex; flex-direction: column; align-items: center;
-            cursor: pointer; transition: 0.2s; filter: grayscale(0.9);
-            opacity: 0.5; width: 100px;
-        }
+        #bin-panel { width: 850px; display: flex; justify-content: center; gap: 15px; background: rgba(0, 0, 0, 0.8); padding: 15px 0; border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue); }
+        .bin-btn { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; filter: grayscale(0.9); opacity: 0.5; width: 100px; }
         .bin-btn img { width: 75px; height: 75px; object-fit: contain; margin-bottom: 5px; }
         .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; font-weight: bold; }
         .bin-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
         .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
-        .overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100; text-align: center;
-        }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; text-align: center; }
         h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
-        button {
-            padding: 15px 45px; font-family: 'Orbitron', sans-serif;
-            background: transparent; color: var(--neon-green);
-            border: 2px solid var(--neon-green); cursor: pointer;
-            margin-top: 25px; text-transform: uppercase; font-weight: bold;
-        }
-        button:hover { background: var(--neon-green); color: black; box-shadow: 0 0 20px var(--neon-green); }
-        #hud {
-            position: absolute; top: 10px; left: 10px; width: 830px;
-            display: flex; justify-content: space-between;
-            font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10;
-        }
+        button { padding: 15px 45px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; margin-top: 25px; text-transform: uppercase; font-weight: bold; }
+        #hud { position: absolute; top: 10px; left: 10px; width: 830px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; }
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
-        #speed-alert {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: var(--neon-blue); font-family: 'Orbitron', sans-serif;
-            font-size: 2rem; pointer-events: none; opacity: 0;
-            transition: opacity 0.5s; z-index: 20;
-        }
     </style>
 </head>
 <body>
@@ -82,19 +38,22 @@
             </div>
             <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
-        <div id="speed-alert">VELOCIDADE AUMENTOU!</div>
+
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Início em baixa velocidade para calibração.<br>O sistema acelerará automaticamente.</p>
+            <p>Colete os itens com o recipiente correto!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
+
         <div id="end-screen" class="overlay hidden">
             <h1>MISSÃO FINALIZADA</h1>
             <p id="final-stats"></p>
             <button onclick="location.reload()">Recomeçar</button>
         </div>
+
         <canvas id="gameCanvas" width="850" height="450"></canvas>
     </div>
+
     <div id="bin-panel">
         <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>ELETRÔNICO</span></div>
         <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')"><img src="6.png"><span>PAPEL</span></div>
@@ -110,14 +69,14 @@
     const ctx = canvas.getContext('2d');
     
     let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
-    let globalSpeedMultiplier = 0.10; // VELOCIDADE INICIAL BEM LENTA
+    let globalSpeedMultiplier = 0.15; 
     let lastSpawnX = 0, lastAccelTime = 0, currentAccelInterval = 50; 
 
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
         ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
         org1: 'pizza.png', org2: 'ceia-de-natal.png', org3: 'salada.png', org4: 'sorvete.png',
-        metal1: 'lata-de-cerveja.png', metal2: 'clima.png', 
+        metal1: 'lata-de-cerveja.png', metal2: 'parafuso.png', 
         glass1: 'garrafa.png', plastic1: 'água.png'
     };
 
@@ -154,10 +113,10 @@
 
     class Trash {
         constructor() {
-            let newX;
-            do { newX = Math.random() * (canvas.width - 60); } while (Math.abs(newX - lastSpawnX) < 180); 
+            let newX = Math.random() * (canvas.width - 60);
+            if (Math.abs(newX - lastSpawnX) < 150) newX = (newX + 200) % (canvas.width - 60);
             this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
-            this.speed = (1.2 + Math.random() * 1.5) * globalSpeedMultiplier;
+            this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
             let typeKey;
@@ -178,14 +137,7 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.10; lastAccelTime = 0; currentAccelInterval = 50;
-        items = []; updateHUD(); loop();
-    }
-
-    function showAlert() {
-        const alert = document.getElementById('speed-alert');
-        alert.style.opacity = "1";
-        setTimeout(() => { alert.style.opacity = "0"; }, 2000);
+        globalSpeedMultiplier = 0.15; items = []; updateHUD(); loop();
     }
 
     function updateHUD() {
@@ -195,55 +147,41 @@
 
     function loop() {
         if (!gameActive) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(loop); // Chamada no início para segurança
         
-        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
-        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
-        else { player.sprite = 'botFront'; }
-        
-        if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
+        try {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
+            else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
+            else { player.sprite = 'botFront'; }
+            
+            if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
-        frame++;
-        const currentTime = Math.floor(frame / 60);
-        document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
+            frame++;
+            const currentTime = Math.floor(frame / 60);
+            document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
+            globalSpeedMultiplier += 0.0001;
 
-        // ACELERAÇÃO SUAVE PERMANENTE (0.1% a cada segundo)
-        globalSpeedMultiplier += 0.0001;
+            if (frame % 100 === 0) items.push(new Trash());
 
-        // ACELERAÇÃO EM MARCOS (Conforme o plano)
-        if (currentTime > 0 && (currentTime - lastAccelTime) >= currentAccelInterval) {
-            globalSpeedMultiplier += 0.08; 
-            lastAccelTime = currentTime;
-            showAlert();
-            if (currentTime >= 150 && currentTime < 190) currentAccelInterval = 40;
-            else if (currentTime >= 190 && currentTime < 220) currentAccelInterval = 30;
-            else if (currentTime >= 220) currentAccelInterval = 20;
-        }
+            for (let i = items.length - 1; i >= 0; i--) {
+                items[i].update();
+                items[i].draw();
 
-        // Spawn adaptativo
-        if (frame % Math.max(40, Math.floor(120 / (globalSpeedMultiplier * 3))) === 0) {
-            items.push(new Trash());
-        }
+                // Colisão
+                if (items[i].y + items[i].h > player.y + 20 && items[i].y < player.y + 80 &&
+                    items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
+                    
+                    if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
+                    items.splice(i, 1); updateHUD(); continue;
+                }
 
-        for (let i = items.length - 1; i >= 0; i--) {
-            items[i].update();
-            items[i].draw();
-
-            if (items[i].y + items[i].h > player.y + 30 && items[i].y < player.y + 60 &&
-                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
-                if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
-                items.splice(i, 1); updateHUD(); continue;
+                if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
             }
-            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
-        }
 
-        if (errors >= 20) {
-            gameActive = false;
-            document.getElementById('end-screen').classList.remove('hidden');
-            document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo Vivo: ${Math.floor(frame/60)}s`;
-        } else {
-            requestAnimationFrame(loop);
-        }
+            if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); }
+        } catch (e) { console.error("Erro no motor:", e); }
     }
 </script>
 </body>
