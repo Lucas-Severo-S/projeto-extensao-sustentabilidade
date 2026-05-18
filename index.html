@@ -3,109 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoBot: Missão Sustentável 2026</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>EcoBot: Debug Mobile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --dark-bg: #050505; }
+        :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
         
-        * { touch-action: manipulation; box-sizing: border-box; }
-
-        body { 
-            margin: 0; background-color: var(--dark-bg); color: white; 
-            font-family: 'Roboto', sans-serif; display: flex; 
-            justify-content: center; align-items: center; 
-            min-height: 100vh; overflow: hidden;
+        /* CONSOLE VIRTUAL PARA VOCÊ VER NO CELULAR */
+        #debug-log { 
+            position: fixed; top: 0; left: 0; width: 100%; max-height: 80px; 
+            background: rgba(255, 0, 0, 0.8); color: white; font-size: 10px; 
+            z-index: 9999; overflow-y: auto; pointer-events: none; padding: 5px;
+            font-family: monospace; display: block;
         }
 
-        #main-container { 
-            display: flex; flex-direction: column; align-items: center; 
-            width: 100vw; height: 100vh; max-width: 950px; 
-            background: rgba(10, 10, 25, 1); border: 1px solid var(--neon-blue);
-            position: relative;
-        }
+        #main-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
+        #game-area { flex-grow: 1; position: relative; background: #050510; }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        #game-area { 
-            position: relative; width: 100%; flex-grow: 1;
-            background: linear-gradient(to bottom, #0f0c29, #24243e); 
-            overflow: hidden; 
-        }
-
-        canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
-
-        /* PAINEL DE LIXEIRAS - Compacto para Mobile */
         #bin-panel { 
-            width: 100%; display: flex; justify-content: space-around;
-            background: #000; padding: 5px; border-top: 2px solid var(--neon-blue);
+            display: flex; justify-content: space-around; background: #000; 
+            padding: 10px 0; border-top: 1px solid var(--neon-blue);
         }
+        .bin-btn { display: flex; flex-direction: column; align-items: center; opacity: 0.5; }
+        .bin-btn.active { opacity: 1; transform: scale(1.1); }
+        .bin-btn img { width: 45px; height: 45px; object-fit: contain; }
+        .bin-btn span { font-size: 8px; font-family: 'Orbitron'; margin-top: 2px; }
 
-        .bin-btn { 
-            display: flex; flex-direction: column; align-items: center; 
-            cursor: pointer; transition: 0.2s; filter: grayscale(0.8); opacity: 0.6;
-        }
-
-        .bin-btn img { width: 50px; height: 50px; object-fit: contain; }
-        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 7px; color: white; margin-top: 2px; }
-        
-        .bin-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
-        .bin-btn.active img { filter: drop-shadow(0 0 8px var(--neon-green)); }
-
-        /* TELAS DE SOBREPOSIÇÃO */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; text-align: center; padding: 20px; }
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 1.5rem; margin-bottom: 10px; }
-        .hidden { display: none !important; }
-
-        button { padding: 12px 25px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; text-transform: uppercase; font-weight: bold; }
-
-        #hud { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; font-size: 0.6rem; }
-        .stat { background: rgba(0, 0, 0, 0.7); padding: 4px 8px; border: 1px solid var(--neon-blue); }
-
-        /* AVISO DE ROTAÇÃO */
-        #rotate-warning {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; color: white; z-index: 999; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-        }
-
-        @media screen and (orientation: portrait) {
-            #rotate-warning { display: flex; }
-        }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #hud { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; font-family: 'Orbitron'; font-size: 10px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div id="rotate-warning">
-    <img src="https://cdn-icons-png.flaticon.com/512/35/35432.png" width="50" style="filter: invert(1); margin-bottom: 20px;">
-    <p>Por favor, gire o seu celular para a horizontal (Paisagem) para jogar.</p>
-</div>
+<div id="debug-log">Log de Sistema: Iniciando...</div>
 
 <div id="main-container">
     <div id="game-area">
         <div id="hud" class="hidden">
-            <div class="stat">PTS: <span id="score-val">0</span></div>
-            <div style="text-align: center;">
-                <div class="stat" id="mode-display">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
-                <div id="time-text" style="font-size: 0.5rem; margin-top: 2px;">0s</div>
-            </div>
-            <div class="stat" style="border-color: var(--neon-red); color: var(--neon-red);">ERROS: <span id="error-val">0</span></div>
+            <div>PTS: <span id="score-val">0</span></div>
+            <div id="mode-text" style="color: var(--neon-blue);">ELETRÔNICO</div>
+            <div style="color: var(--neon-red);">ERROS: <span id="error-val">0</span></div>
         </div>
 
         <div id="start-screen" class="overlay">
-            <h1>ECOBOT 2026</h1>
-            <p style="font-size: 0.8rem;">Toque nas laterais da tela para mover.<br>Selecione a lixeira correta abaixo.</p>
-            <button onclick="requestStart()">Iniciar Missão</button>
-        </div>
-
-        <div id="end-screen" class="overlay hidden">
-            <h1>MISSÃO CONCLUÍDA</h1>
-            <p id="final-stats"></p>
-            <button onclick="location.reload()">Recomeçar</button>
+            <h1 style="color: var(--neon-green); font-family: 'Orbitron';">ECOBOT 2026</h1>
+            <button onclick="requestStart()" style="padding: 15px 30px; background: none; border: 2px solid var(--neon-green); color: var(--neon-green); font-family: 'Orbitron';">INICIAR NO CELULAR</button>
         </div>
 
         <canvas id="gameCanvas"></canvas>
     </div>
 
     <div id="bin-panel">
-        <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>ELETRÔNICO</span></div>
+        <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>E-WASTE</span></div>
         <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')"><img src="6.png"><span>PAPEL</span></div>
         <div class="bin-btn" id="btn-organic" onclick="setMode('ORGANIC')"><img src="1.png"><span>ORGÂNICO</span></div>
         <div class="bin-btn" id="btn-metal" onclick="setMode('METAL')"><img src="2.png"><span>METAIS</span></div>
@@ -115,105 +65,79 @@
 </div>
 
 <script>
+    // REDIRECIONA ERROS PARA A TELA DO CELULAR
+    const logDiv = document.getElementById('debug-log');
+    window.onerror = function(msg, url, line) {
+        logDiv.innerHTML += `<br> ERR: ${msg} (Linha: ${line})`;
+        return false;
+    };
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const container = document.getElementById('main-container');
+    let gameActive = false, score = 0, errors = 0, items = [], frame = 0;
+    let globalSpeed = 0.15, lastSpawn = 0;
+
+    const images = {};
+    const files = {
+        bot: '7.png', botL: '9.png', botR: '8.png',
+        ew1: 'placa-de-video.png', ew2: 'teclado.png',
+        og1: 'pizza.png', og2: 'ceia-de-natal.png',
+        mt1: 'lata-de-cerveja.png', mt2: 'parafuso.png',
+        gl1: 'garrafa.png', pl1: 'agua.png'
+    };
+
+    // Carregar imagens
+    for (let key in files) {
+        images[key] = new Image();
+        images[key].src = files[key];
+        images[key].onerror = () => logDiv.innerHTML += `<br> Falha: ${files[key]}`;
+    }
+
+    const player = { x: 50, y: 50, w: 60, h: 60, speed: 8, sprite: 'bot' };
+    const keyState = {};
 
     function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
-    let globalSpeedMultiplier = 0.12, lastSpawnTime = 0, nextSpawnDelay = 3000;
-
-    const imageFiles = {
-        botFront: '7.png', botRight: '8.png', botLeft: '9.png',
-        ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
-        org1: 'pizza.png', org2: 'ceia-de-natal.png', org3: 'salada.png', org4: 'sorvete.png',
-        metal1: 'lata-de-cerveja.png', metal2: 'parafuso.png', 
-        glass1: 'garrafa.png', plastic1: 'agua.png'
-    };
-
-    const WASTE_TYPES = {
-        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste', items: ['ewaste1', 'ewaste2'] },
-        PAPER: { id: 1, name: 'PAPEL', color: '#00bfff', btnId: 'btn-paper', items: [] },
-        ORGANIC: { id: 2, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic', items: ['org1', 'org2', 'org3', 'org4'] },
-        METAL: { id: 3, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal', items: ['metal1', 'metal2'] },
-        GLASS: { id: 4, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass', items: ['glass1'] },
-        PLASTIC: { id: 5, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic', items: ['plastic1'] }
-    };
-
-    let currentMode = WASTE_TYPES.EWASTE;
-    const images = {}, keyState = {};
-
-    for (let key in imageFiles) {
-        images[key] = new Image();
-        images[key].src = imageFiles[key];
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        player.y = canvas.height - 70;
+        player.x = canvas.width / 2 - 30;
     }
 
-    const player = { x: 0, y: 0, w: 70, h: 70, speed: 10, sprite: 'botFront' };
-
-    // CONTROLES PC
-    window.addEventListener('keydown', e => { keyState[e.key] = true; });
-    window.addEventListener('keyup', e => { keyState[e.key] = false; });
-
-    // CONTROLES TOUCH
-    canvas.addEventListener('touchstart', e => {
-        e.preventDefault();
-        const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
-        if (touchX < canvas.width / 2) { keyState['ArrowLeft'] = true; } 
-        else { keyState['ArrowRight'] = true; }
-    }, {passive: false});
-
-    canvas.addEventListener('touchend', () => {
-        keyState['ArrowLeft'] = false;
-        keyState['ArrowRight'] = false;
-    });
-
-    function setMode(modeKey) {
-        document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
-        currentMode = WASTE_TYPES[modeKey];
-        document.getElementById(currentMode.btnId).classList.add('active');
-        document.getElementById('mode-text').innerText = currentMode.name;
+    function setMode(mode) {
+        document.querySelectorAll('.bin-btn').forEach(b => b.classList.remove('active'));
+        const modes = {
+            'EWASTE': {id: 0, color: '#ff8c00', btn: 'btn-ewaste'},
+            'PAPER': {id: 1, color: '#00bfff', btn: 'btn-paper'},
+            'ORGANIC': {id: 2, color: '#8b4513', btn: 'btn-organic'},
+            'METAL': {id: 3, color: '#ffd700', btn: 'btn-metal'},
+            'GLASS': {id: 4, color: '#32cd32', btn: 'btn-glass'},
+            'PLASTIC': {id: 5, color: '#ff4500', btn: 'btn-plastic'}
+        };
+        currentMode = modes[mode];
+        document.getElementById(currentMode.btn).classList.add('active');
+        document.getElementById('mode-text').innerText = mode;
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
-    class Trash {
-        constructor(imgKey, type) {
-            this.x = Math.random() * (canvas.width - 40);
-            this.y = -50; this.w = 40; this.h = 40;
-            this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
-            this.imgKey = imgKey; this.type = type;
-        }
-        update() { this.y += this.speed; }
-        draw() { 
-            if (images[this.imgKey] && images[this.imgKey].complete) {
-                ctx.drawImage(images[this.imgKey], this.x, this.y, this.w, this.h); 
-            }
-        }
-    }
+    let currentMode = {id: 0};
 
-    // TELA CHEIA E INICIAR
+    // Toque no celular
+    canvas.addEventListener('touchstart', e => {
+        const touchX = e.touches[0].clientX;
+        if (touchX < window.innerWidth / 2) keyState['L'] = true;
+        else keyState['R'] = true;
+    });
+    canvas.addEventListener('touchend', () => { keyState['L'] = false; keyState['R'] = false; });
+
     function requestStart() {
-        if (container.requestFullscreen) {
-            container.requestFullscreen().catch(() => {});
-        } else if (container.webkitRequestFullscreen) {
-            container.webkitRequestFullscreen().catch(() => {});
-        }
-        startGame();
-    }
-
-    function startGame() {
+        const de = document.documentElement;
+        if (de.requestFullscreen) de.requestFullscreen();
+        else if (de.webkitRequestFullscreen) de.webkitRequestFullscreen();
+        
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         resize();
-        gameActive = true; score = 0; errors = 0; frame = 0;
-        player.x = canvas.width / 2 - 35;
-        player.y = canvas.height - 80;
-        items = []; lastSpawnTime = Date.now();
+        gameActive = true;
         loop();
     }
 
@@ -221,41 +145,37 @@
         if (!gameActive) return;
         requestAnimationFrame(loop);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
-        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
-        else { player.sprite = 'botFront'; }
-        
-        if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
-        frame++;
-        const currentTime = Date.now();
-        document.getElementById('time-text').innerText = `${Math.floor(frame / 60)}s`;
-        globalSpeedMultiplier += 0.0001;
+        // Movimento
+        if (keyState['L'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botL'; }
+        else if (keyState['R'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botR'; }
+        else player.sprite = 'bot';
 
-        if (currentTime - lastSpawnTime > nextSpawnDelay) {
-            const types = Object.keys(WASTE_TYPES).filter(t => WASTE_TYPES[t].items.length > 0);
-            const randomTypeKey = types[Math.floor(Math.random() * types.length)];
-            const randomItemKey = WASTE_TYPES[randomTypeKey].items[Math.floor(Math.random() * WASTE_TYPES[randomTypeKey].items.length)];
-            items.push(new Trash(randomItemKey, WASTE_TYPES[randomTypeKey]));
-            lastSpawnTime = currentTime;
-            nextSpawnDelay = 2000 + Math.random() * 4000;
+        if (images[player.sprite].complete) {
+            ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
         }
 
-        for (let i = items.length - 1; i >= 0; i--) {
-            items[i].update(); items[i].draw();
-            if (items[i].y + items[i].h > player.y + 10 && items[i].y < player.y + 60 &&
-                items[i].x + items[i].w > player.x && items[i].x < player.x + player.w) {
-                if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
+        // Spawn Simples
+        if (Date.now() - lastSpawn > 3000) {
+            items.push({ 
+                x: Math.random() * (canvas.width - 40), y: -40, 
+                img: images.ew1, id: 0 
+            });
+            lastSpawn = Date.now();
+        }
+
+        items.forEach((item, i) => {
+            item.y += 2;
+            if (item.img.complete) ctx.drawImage(item.img, item.x, item.y, 40, 40);
+            
+            // Colisão
+            if (item.y > player.y && item.x > player.x && item.x < player.x + player.w) {
+                score += 10;
                 items.splice(i, 1);
                 document.getElementById('score-val').innerText = score;
-                document.getElementById('error-val').innerText = errors;
-                continue;
             }
-            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); document.getElementById('error-val').innerText = errors; }
-        }
-
-        if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); document.getElementById('final-stats').innerText = `Pontos: ${score}`; }
+            if (item.y > canvas.height) items.splice(i, 1);
+        });
     }
 </script>
 </body>
