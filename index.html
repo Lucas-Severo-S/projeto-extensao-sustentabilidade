@@ -24,87 +24,102 @@
             overflow: hidden;
         }
 
-        #main-wrapper {
+        #main-container {
             display: flex;
-            gap: 20px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
             border: 2px solid var(--neon-blue);
+            background: rgba(10, 10, 25, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
         }
 
-        #game-container {
+        #game-area {
             position: relative;
             width: 800px;
-            height: 600px;
-            background: linear-gradient(to bottom, #101020, #16213e);
-            border: 2px solid rgba(0, 243, 255, 0.3);
+            height: 500px; /* Reduzi um pouco a altura para caber o painel embaixo */
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
         }
 
-        /* Painel Lateral */
-        #sidebar {
-            width: 120px;
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* PAINEL INFERIOR */
+        #bin-panel {
+            width: 800px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 0;
+            border-radius: 0 0 15px 15px;
+            border-top: 1px solid var(--neon-blue);
+        }
+
+        .bin-btn {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            gap: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid var(--neon-blue);
-        }
-
-        .bin-option {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto;
+            align-items: center;
             cursor: pointer;
-            border: 3px solid transparent;
             transition: 0.3s;
-            padding: 5px;
-            border-radius: 8px;
+            filter: grayscale(0.5);
+            opacity: 0.7;
+        }
+
+        .bin-btn img {
+            width: 65px;
+            height: 65px;
             object-fit: contain;
-            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 5px;
         }
 
-        .bin-option:hover {
+        .bin-btn span {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            color: white;
+        }
+
+        .bin-btn:hover {
+            transform: translateY(-5px);
+            filter: grayscale(0);
+            opacity: 1;
+        }
+
+        .bin-btn.active {
+            filter: grayscale(0);
+            opacity: 1;
             transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.1);
         }
 
-        .bin-option.active {
-            border-color: var(--neon-green);
-            background: rgba(57, 255, 20, 0.2);
-            box-shadow: 0 0 15px var(--neon-green);
+        .bin-btn.active img {
+            filter: drop-shadow(0 0 10px var(--neon-green));
         }
 
-        canvas { display: block; }
-
-        /* Telas */
+        /* INTERFACE */
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 100; text-align: center;
         }
 
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.5rem; margin: 0; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin: 0; }
         .hidden { display: none !important; }
 
         button {
-            padding: 12px 30px;
+            padding: 15px 40px;
             font-family: 'Orbitron', sans-serif;
             background: transparent;
             color: var(--neon-green);
             border: 2px solid var(--neon-green);
             cursor: pointer;
             margin-top: 20px;
+            text-transform: uppercase;
         }
 
         #hud {
@@ -113,43 +128,53 @@
             display: flex; justify-content: space-between;
             font-family: 'Orbitron', sans-serif;
             pointer-events: none;
+            z-index: 10;
         }
 
-        .stat-box { background: rgba(0, 243, 255, 0.1); padding: 8px 15px; border: 1px solid var(--neon-blue); }
+        .stat { background: rgba(0, 0, 0, 0.5); padding: 5px 15px; border: 1px solid var(--neon-blue); }
     </style>
 </head>
 <body>
 
-<div id="main-wrapper">
-    <div id="game-container">
+<div id="main-container">
+    <div id="game-area">
         <div id="hud" class="hidden">
-            <div class="stat-box">PONTOS: <span id="score-val">0</span></div>
-            <div class="stat-box">MODO: <span id="mode-text" style="color: #ff8c00;">E-WASTE</span></div>
+            <div class="stat">PONTOS: <span id="score-val">0</span></div>
+            <div class="stat">MODO: <span id="mode-text" style="color: #ff8c00;">E-WASTE</span></div>
         </div>
 
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Selecione a lixeira correta no painel lateral <br>para coletar os resíduos que caem!</p>
+            <p>Use as SETAS do teclado para mover.<br>CLIQUE nas lixeiras abaixo para mudar o modo.</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
         <div id="end-screen" class="overlay hidden">
-            <h1>MISSÃO CONCLUÍDA!</h1>
-            <p>Sua contribuição ajudou a reduzir o impacto ambiental.</p>
-            <button onclick="window.open('SEU_LINK_DO_FORMULARIO')">Responder Pesquisa da UNIVESP</button>
-            <button onclick="location.reload()" style="font-size: 0.8rem; border-color: white; color: white;">Jogar Novamente</button>
+            <h1>PARABÉNS!</h1>
+            <p>Você é um mestre da reciclagem.</p>
+            <button onclick="window.open('URL_DO_FORMULARIO')">Responder Pesquisa UNIVESP</button>
+            <button onclick="location.reload()" style="font-size: 0.7rem; border-color: white; color: white;">Jogar Novamente</button>
         </div>
 
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
     </div>
 
-    <div id="sidebar">
-        <p style="font-size: 0.7rem; text-align: center; color: var(--neon-blue);">CLIQUE PARA TROCAR</p>
-        <img src="6.png" class="bin-option active" id="bin-ewaste" onclick="setMode('EWASTE')" title="Eletrônicos">
-        <img src="1.png" class="bin-option" id="bin-organic" onclick="setMode('ORGANIC')" title="Orgânico">
-        <img src="2.png" class="bin-option" id="bin-metal" onclick="setMode('METAL')" title="Metais">
-        <img src="4.png" class="bin-option" id="bin-glass" onclick="setMode('GLASS')" title="Vidro">
-        <img src="5.png" class="bin-option" id="bin-plastic" onclick="setMode('PLASTIC')" title="Plástico">
+    <div id="bin-panel">
+        <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')">
+            <img src="6.png"><span>E-WASTE</span>
+        </div>
+        <div class="bin-btn" id="btn-organic" onclick="setMode('ORGANIC')">
+            <img src="1.png"><span>ORGÂNICO</span>
+        </div>
+        <div class="bin-btn" id="btn-metal" onclick="setMode('METAL')">
+            <img src="2.png"><span>METAIS</span>
+        </div>
+        <div class="bin-btn" id="btn-glass" onclick="setMode('GLASS')">
+            <img src="4.png"><span>VIDRO</span>
+        </div>
+        <div class="bin-btn" id="btn-plastic" onclick="setMode('PLASTIC')">
+            <img src="5.png"><span>PLÁSTICO</span>
+        </div>
     </div>
 </div>
 
@@ -162,7 +187,7 @@
     let items = [];
     let frame = 0;
 
-    // Mapeamento de Arquivos
+    // Configuração de Imagens (Baseado no seu GitHub)
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
         ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
@@ -173,46 +198,56 @@
     };
 
     const WASTE_TYPES = {
-        EWASTE: { id: 0, name: 'E-WASTE', color: '#ff8c00', binId: 'bin-ewaste' },
-        ORGANIC: { id: 1, name: 'ORGÂNICO', color: '#8b4513', binId: 'bin-organic' },
-        METAL: { id: 2, name: 'METAIS', color: '#ffd700', binId: 'bin-metal' },
-        GLASS: { id: 3, name: 'VIDRO', color: '#32cd32', binId: 'bin-glass' },
-        PLASTIC: { id: 4, name: 'PLÁSTICO', color: '#ff4500', binId: 'bin-plastic' }
+        EWASTE: { id: 0, name: 'E-WASTE', color: '#ff8c00', btnId: 'btn-ewaste' },
+        ORGANIC: { id: 1, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic' },
+        METAL: { id: 2, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal' },
+        GLASS: { id: 3, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass' },
+        PLASTIC: { id: 4, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic' }
     };
 
     let currentMode = WASTE_TYPES.EWASTE;
     const images = {};
+    const keys = { left: false, right: false };
 
-    // Pré-carregamento
+    // Carregar
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
     }
 
     const player = {
-        x: 350, y: 480, w: 100, h: 100, speed: 12,
-        sprite: 'botFront', moveLeft: false, moveRight: false
+        x: 350, y: 380, w: 100, h: 100, speed: 10,
+        sprite: 'botFront'
     };
 
+    // ESCUTA DE TECLAS CORRIGIDA
+    window.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') { keys.left = true; player.sprite = 'botLeft'; }
+        if (e.key === 'ArrowRight') { keys.right = true; player.sprite = 'botRight'; }
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.key === 'ArrowLeft') keys.left = false;
+        if (e.key === 'ArrowRight') keys.right = false;
+        if (!keys.left && !keys.right) player.sprite = 'botFront';
+    });
+
     function setMode(modeKey) {
-        // Remove 'active' de todas
-        document.querySelectorAll('.bin-option').forEach(el => el.classList.remove('active'));
-        
+        document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
         currentMode = WASTE_TYPES[modeKey];
-        document.getElementById(currentMode.binId).classList.add('active');
+        document.getElementById(currentMode.btnId).classList.add('active');
         document.getElementById('mode-text').innerText = currentMode.name;
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
     class Trash {
         constructor() {
-            this.x = Math.random() * (canvas.width - 60);
+            this.x = Math.random() * (canvas.width - 50);
             this.y = -60;
-            this.w = 55; this.h = 55;
-            this.speed = 3 + Math.random() * 4;
-            
-            const keys = Object.keys(WASTE_TYPES);
-            const typeKey = keys[Math.floor(Math.random() * keys.length)];
+            this.w = 50; this.h = 50;
+            this.speed = 2 + Math.random() * 3;
+            const keysArr = Object.keys(WASTE_TYPES);
+            const typeKey = keysArr[Math.floor(Math.random() * keysArr.length)];
             this.type = WASTE_TYPES[typeKey];
             
             if (typeKey === 'EWASTE') this.img = images['ewaste' + (Math.random() > 0.5 ? '1' : '2')];
@@ -225,17 +260,6 @@
         draw() { if (this.img) ctx.drawImage(this.img, this.x, this.y, this.w, this.h); }
     }
 
-    // Teclado
-    window.addEventListener('keydown', e => {
-        if (e.key === 'ArrowLeft') { player.moveLeft = true; player.sprite = 'botLeft'; }
-        if (e.key === 'ArrowRight') { player.moveRight = true; player.sprite = 'botRight'; }
-    });
-    window.addEventListener('keyup', e => {
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            player.moveLeft = false; player.moveRight = false; player.sprite = 'botFront';
-        }
-    });
-
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
@@ -247,16 +271,16 @@
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Movimento
-        if (player.moveLeft && player.x > 0) player.x -= player.speed;
-        if (player.moveRight && player.x < canvas.width - player.w) player.x += player.speed;
+        // Movimento Corrigido
+        if (keys.left && player.x > 0) player.x -= player.speed;
+        if (keys.right && player.x < canvas.width - player.w) player.x += player.speed;
 
         // Desenha Robô
         if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
         // Gerar itens
         frame++;
-        if (frame % 70 === 0) items.push(new Trash());
+        if (frame % 80 === 0) items.push(new Trash());
 
         items.forEach((item, index) => {
             item.update();
