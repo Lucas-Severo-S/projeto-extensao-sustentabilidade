@@ -39,7 +39,7 @@
 
         #game-area {
             position: relative;
-            width: 800px;
+            width: 850px; /* Aumentado levemente para as 6 lixeiras */
             height: 450px;
             background: linear-gradient(to bottom, #0f0c29, #24243e);
             border: 1px solid rgba(255,255,255,0.1);
@@ -48,14 +48,13 @@
 
         canvas { display: block; }
 
-        /* PAINEL INFERIOR AMPLIADO */
         #bin-panel {
-            width: 800px;
+            width: 850px;
             display: flex;
             justify-content: center;
-            gap: 25px;
+            gap: 15px;
             background: rgba(0, 0, 0, 0.8);
-            padding: 20px 0;
+            padding: 15px 0;
             border-radius: 0 0 15px 15px;
             border-top: 2px solid var(--neon-blue);
         }
@@ -68,19 +67,19 @@
             transition: 0.2s;
             filter: grayscale(0.9);
             opacity: 0.5;
-            width: 110px; /* Aumentado */
+            width: 100px;
         }
 
         .bin-btn img { 
-            width: 90px; /* TAMANHO AMPLIADO */
-            height: 90px; 
+            width: 75px; /* Ajustado para caber 6 */
+            height: 75px; 
             object-fit: contain; 
-            margin-bottom: 8px; 
+            margin-bottom: 5px; 
         }
 
         .bin-btn span { 
             font-family: 'Orbitron', sans-serif; 
-            font-size: 11px; 
+            font-size: 9px; 
             color: white; 
             text-align: center;
             font-weight: bold;
@@ -89,11 +88,10 @@
         .bin-btn.active {
             filter: grayscale(0);
             opacity: 1;
-            transform: scale(1.15);
+            transform: scale(1.1);
         }
         .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
 
-        /* INTERFACE */
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -122,7 +120,7 @@
 
         #hud {
             position: absolute;
-            top: 10px; left: 10px; width: 780px;
+            top: 10px; left: 10px; width: 830px;
             display: flex; justify-content: space-between;
             font-family: 'Orbitron', sans-serif;
             pointer-events: none;
@@ -140,7 +138,7 @@
         <div id="hud" class="hidden">
             <div class="stat">PONTOS: <span id="score-val">0</span></div>
             <div style="text-align: center;">
-                <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">E-WASTE</span></div>
+                <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
             </div>
             <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
@@ -148,23 +146,25 @@
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
             <p>Use as SETAS para mover o Robô.<br>CLIQUE nas lixeiras abaixo para mudar o modo.</p>
-            <p style="color: var(--neon-blue); font-size: 0.9rem;">Cuidado: O lixo acelera com o tempo!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
         <div id="end-screen" class="overlay hidden">
-            <h1 id="end-msg-title">MISSÃO FINALIZADA</h1>
+            <h1>MISSÃO FINALIZADA</h1>
             <p id="final-stats"></p>
-            <button onclick="window.open('URL_DO_FORMULARIO_PESQUISA')">Responder Pesquisa</button>
-            <button onclick="location.reload()" style="font-size: 0.7rem; border-color: white; color: white;">Recomeçar</button>
+            <button onclick="window.open('URL_DO_FORMULARIO')">Responder Pesquisa</button>
+            <button onclick="location.reload()">Recomeçar</button>
         </div>
 
-        <canvas id="gameCanvas" width="800" height="450"></canvas>
+        <canvas id="gameCanvas" width="850" height="450"></canvas>
     </div>
 
     <div id="bin-panel">
         <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')">
-            <img src="6.png"><span>E-WASTE</span>
+            <img src="3.png"><span>ELETRÔNICO</span>
+        </div>
+        <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')">
+            <img src="6.png"><span>PAPEL</span>
         </div>
         <div class="bin-btn" id="btn-organic" onclick="setMode('ORGANIC')">
             <img src="1.png"><span>ORGÂNICO</span>
@@ -185,12 +185,8 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    let score = 0;
-    let errors = 0;
-    let gameActive = false;
-    let items = [];
-    let frame = 0;
-    let globalSpeedMultiplier = 1.0;
+    let score = 0; let errors = 0; let gameActive = false;
+    let items = []; let frame = 0; let globalSpeedMultiplier = 1.0;
     let lastSpawnX = 0;
 
     const imageFiles = {
@@ -202,26 +198,23 @@
     };
 
     const WASTE_TYPES = {
-        EWASTE: { id: 0, name: 'E-WASTE', color: '#ff8c00', btnId: 'btn-ewaste' },
-        ORGANIC: { id: 1, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic' },
-        METAL: { id: 2, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal' },
-        GLASS: { id: 3, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass' },
-        PLASTIC: { id: 4, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic' }
+        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste' },
+        PAPER: { id: 1, name: 'PAPEL', color: '#00bfff', btnId: 'btn-paper' },
+        ORGANIC: { id: 2, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic' },
+        METAL: { id: 3, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal' },
+        GLASS: { id: 4, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass' },
+        PLASTIC: { id: 5, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic' }
     };
 
     let currentMode = WASTE_TYPES.EWASTE;
-    const images = {};
-    const keyState = {};
+    const images = {}; const keyState = {};
 
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
     }
 
-    const player = {
-        x: 350, y: 340, w: 100, h: 100, speed: 12,
-        sprite: 'botFront'
-    };
+    const player = { x: 375, y: 340, w: 100, h: 100, speed: 12, sprite: 'botFront' };
 
     window.addEventListener('keydown', e => { keyState[e.key] = true; });
     window.addEventListener('keyup', e => { keyState[e.key] = false; });
@@ -237,20 +230,16 @@
     class Trash {
         constructor() {
             let newX;
-            do {
-                newX = Math.random() * (canvas.width - 60);
-            } while (Math.abs(newX - lastSpawnX) < 180); 
-            
-            this.x = newX;
-            lastSpawnX = newX;
-            this.y = -60;
-            this.w = 55; this.h = 55;
+            do { newX = Math.random() * (canvas.width - 60); } while (Math.abs(newX - lastSpawnX) < 180); 
+            this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
             this.speed = (2 + Math.random() * 2) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
-            const typeKey = keysArr[Math.floor(Math.random() * keysArr.length)];
+            // Sorteia apenas itens que temos sprites (ignora papel por enquanto se não tiver item)
+            let typeKey;
+            do { typeKey = keysArr[Math.floor(Math.random() * keysArr.length)]; } while (typeKey === 'PAPER');
+
             this.type = WASTE_TYPES[typeKey];
-            
             if (typeKey === 'EWASTE') this.img = images['ewaste' + (Math.random() > 0.5 ? '1' : '2')];
             else if (typeKey === 'ORGANIC') this.img = images['org' + (Math.floor(Math.random() * 4) + 1)];
             else if (typeKey === 'METAL') this.img = images['metal' + (Math.random() > 0.5 ? '1' : '2')];
@@ -264,25 +253,15 @@
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
-        gameActive = true;
-        score = 0; errors = 0; globalSpeedMultiplier = 1.0; items = [];
-        loop();
+        gameActive = true; score = 0; errors = 0; globalSpeedMultiplier = 1.0; items = []; loop();
     }
 
     function loop() {
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (keyState['ArrowLeft'] && player.x > 0) {
-            player.x -= player.speed;
-            player.sprite = 'botLeft';
-        } else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) {
-            player.x += player.speed;
-            player.sprite = 'botRight';
-        } else {
-            player.sprite = 'botFront';
-        }
-
+        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
+        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
+        else { player.sprite = 'botFront'; }
         if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
         frame++;
@@ -290,28 +269,14 @@
         if (frame % 90 === 0) items.push(new Trash());
 
         items.forEach((item, index) => {
-            item.update();
-            item.draw();
-
+            item.update(); item.draw();
             if (item.y + item.h > player.y + 30 && item.y < player.y + 60 &&
                 item.x + item.w > player.x + 10 && item.x < player.x + player.w - 10) {
-                
-                if (item.type.id === currentMode.id) {
-                    score += 10;
-                } else {
-                    errors++;
-                }
-                items.splice(index, 1);
-                updateHUD();
+                if (item.type.id === currentMode.id) score += 10; else errors++;
+                items.splice(index, 1); updateHUD();
             }
-
-            if (item.y > canvas.height) {
-                errors++;
-                items.splice(index, 1);
-                updateHUD();
-            }
+            if (item.y > canvas.height) { errors++; items.splice(index, 1); updateHUD(); }
         });
-
         if (errors >= 20) endGame();
         requestAnimationFrame(loop);
     }
