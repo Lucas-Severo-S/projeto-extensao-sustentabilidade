@@ -7,78 +7,67 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-green: #39ff14;
-            --neon-blue: #00f3ff;
-            --neon-red: #ff3131;
-            --dark-bg: #050505;
+            --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --dark-bg: #050505;
         }
-
         body {
             margin: 0; background-color: var(--dark-bg); color: white;
             font-family: 'Roboto', sans-serif; display: flex;
             justify-content: center; align-items: center;
             height: 100vh; overflow: hidden;
         }
-
         #main-container {
             display: flex; flex-direction: column; align-items: center;
             gap: 10px; padding: 15px; border: 2px solid var(--neon-blue);
             background: rgba(10, 10, 25, 0.95); border-radius: 20px;
             box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
         }
-
         #game-area {
             position: relative; width: 850px; height: 450px;
             background: linear-gradient(to bottom, #0f0c29, #24243e);
             border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
         }
-
         canvas { display: block; }
-
         #bin-panel {
             width: 850px; display: flex; justify-content: center; gap: 15px;
             background: rgba(0, 0, 0, 0.8); padding: 15px 0;
             border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue);
         }
-
         .bin-btn {
             display: flex; flex-direction: column; align-items: center;
             cursor: pointer; transition: 0.2s; filter: grayscale(0.9);
             opacity: 0.5; width: 100px;
         }
-
         .bin-btn img { width: 75px; height: 75px; object-fit: contain; margin-bottom: 5px; }
         .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; font-weight: bold; }
-
         .bin-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
         .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
-
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 100; text-align: center;
         }
-
         h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
-
         button {
             padding: 15px 45px; font-family: 'Orbitron', sans-serif;
             background: transparent; color: var(--neon-green);
             border: 2px solid var(--neon-green); cursor: pointer;
             margin-top: 25px; text-transform: uppercase; font-weight: bold;
         }
-
         button:hover { background: var(--neon-green); color: black; box-shadow: 0 0 20px var(--neon-green); }
-
         #hud {
             position: absolute; top: 10px; left: 10px; width: 830px;
             display: flex; justify-content: space-between;
             font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10;
         }
-
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
+        #speed-alert {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: var(--neon-blue); font-family: 'Orbitron', sans-serif;
+            font-size: 2rem; pointer-events: none; opacity: 0;
+            transition: opacity 0.5s; z-index: 20;
+        }
     </style>
 </head>
 <body>
@@ -89,46 +78,30 @@
             <div class="stat">PONTOS: <span id="score-val">0</span></div>
             <div style="text-align: center;">
                 <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
+                <div id="time-text" style="font-size: 0.7rem; margin-top: 5px;">TEMPO: 0s</div>
             </div>
             <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
-
+        <div id="speed-alert">VELOCIDADE AUMENTOU!</div>
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Separe os resíduos tóxicos do lixo comum!</p>
-            <p style="font-size: 0.8rem; color: var(--neon-blue);">SETAS para mover | MOUSE para trocar o recipiente</p>
+            <p>Início em baixa velocidade para calibração.<br>O sistema acelerará automaticamente.</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
-
         <div id="end-screen" class="overlay hidden">
-            <h1>MISSÃO CONCLUÍDA</h1>
+            <h1>MISSÃO FINALIZADA</h1>
             <p id="final-stats"></p>
-            <button onclick="window.open('SEU_LINK_DO_FORMULARIO')">Responder Pesquisa</button>
             <button onclick="location.reload()">Recomeçar</button>
         </div>
-
         <canvas id="gameCanvas" width="850" height="450"></canvas>
     </div>
-
     <div id="bin-panel">
-        <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')">
-            <img src="3.png"><span>ELETRÔNICO</span>
-        </div>
-        <div class="bin-btn" id="btn-organic" onclick="setMode('ORGANIC')">
-            <img src="1.png"><span>ORGÂNICO</span>
-        </div>
-        <div class="bin-btn" id="btn-metal" onclick="setMode('METAL')">
-            <img src="2.png"><span>METAIS</span>
-        </div>
-        <div class="bin-btn" id="btn-glass" onclick="setMode('GLASS')">
-            <img src="4.png"><span>VIDRO</span>
-        </div>
-        <div class="bin-btn" id="btn-plastic" onclick="setMode('PLASTIC')">
-            <img src="5.png"><span>PLÁSTICO</span>
-        </div>
-        <div class="bin-btn" id="bin-ewaste" onclick="setMode('EWASTE')">
-          <img src="3.png"><span>ELETRÔNICO</span>
-        </div>
+        <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>ELETRÔNICO</span></div>
+        <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')"><img src="6.png"><span>PAPEL</span></div>
+        <div class="bin-btn" id="btn-organic" onclick="setMode('ORGANIC')"><img src="1.png"><span>ORGÂNICO</span></div>
+        <div class="bin-btn" id="btn-metal" onclick="setMode('METAL')"><img src="2.png"><span>METAIS</span></div>
+        <div class="bin-btn" id="btn-glass" onclick="setMode('GLASS')"><img src="4.png"><span>VIDRO</span></div>
+        <div class="bin-btn" id="btn-plastic" onclick="setMode('PLASTIC')"><img src="5.png"><span>PLÁSTICO</span></div>
     </div>
 </div>
 
@@ -136,39 +109,30 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    let score = 0; let errors = 0; let gameActive = false;
-    let items = []; let frame = 0;
-    
-    // Mapeamento Completo com *todos* os ficheiros corretos
+    let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
+    let globalSpeedMultiplier = 0.10; // VELOCIDADE INICIAL BEM LENTA
+    let lastSpawnX = 0, lastAccelTime = 0, currentAccelInterval = 50; 
+
     const imageFiles = {
-        // Robô
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
-        // Lixeiras (Sincronizadas com seus arquivos 1-6)
-        bin_ewaste: '3.png',    // Laranja
-        bin_organic: '1.png',   // Castanho
-        bin_metal: '2.png',     // Amarelo
-        bin_glass: '4.png',     // Verde
-        bin_plastic: '5.png',   // Vermelho
-        // Itens de Lixo - Utilizando *todos* os ficheiros da lista
-        item_ewaste_1: 'placa-de-video.png', item_ewaste_2: 'teclado.png',
-        item_org_1: 'pizza.png', item_org_2: 'ceia-de-natal.png', item_org_3: 'salada.png', item_org_4: 'sorvete.png',
-        item_metal_1: 'lata-de-cerveja.png', item_metal_2: 'parafuso.png',
-        item_glass_1: 'garrafa.png', item_plastic_1: 'água.png'
+        ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
+        org1: 'pizza.png', org2: 'ceia-de-natal.png', org3: 'salada.png', org4: 'sorvete.png',
+        metal1: 'lata-de-cerveja.png', metal2: 'clima.png', 
+        glass1: 'garrafa.png', plastic1: 'água.png'
     };
 
     const WASTE_TYPES = {
-        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste', images: ['item_ewaste_1', 'item_ewaste_2'] },
-        ORGANIC: { id: 1, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic', images: ['item_org_1', 'item_org_2', 'item_org_3', 'item_org_4'] },
-        METAL: { id: 2, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal', images: ['item_metal_1', 'item_metal_2'] },
-        GLASS: { id: 3, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass', images: ['item_glass_1'] },
-        PLASTIC: { id: 4, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic', images: ['item_plastic_1'] }
+        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste' },
+        PAPER: { id: 1, name: 'PAPEL', color: '#00bfff', btnId: 'btn-paper' },
+        ORGANIC: { id: 2, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic' },
+        METAL: { id: 3, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal' },
+        GLASS: { id: 4, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass' },
+        PLASTIC: { id: 5, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic' }
     };
 
     let currentMode = WASTE_TYPES.EWASTE;
-    const images = {};
-    const keyState = {};
+    const images = {}, keyState = {};
 
-    // Pré-carregamento robusto
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
@@ -182,23 +146,29 @@
     function setMode(modeKey) {
         document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
         currentMode = WASTE_TYPES[modeKey];
-        document.getElementById(currentMode.binId).classList.add('active');
+        const btn = document.getElementById(currentMode.btnId);
+        if(btn) btn.classList.add('active');
         document.getElementById('mode-text').innerText = currentMode.name;
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
     class Trash {
         constructor() {
-            this.x = Math.random() * (canvas.width - 60); this.y = -60; this.w = 55; this.h = 55;
-            this.speed = 1.5 + Math.random() * 2;
+            let newX;
+            do { newX = Math.random() * (canvas.width - 60); } while (Math.abs(newX - lastSpawnX) < 180); 
+            this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
+            this.speed = (1.2 + Math.random() * 1.5) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
-            const typeKey = keysArr[Math.floor(Math.random() * keysArr.length)];
+            let typeKey;
+            do { typeKey = keysArr[Math.floor(Math.random() * keysArr.length)]; } while (typeKey === 'PAPER');
+
             this.type = WASTE_TYPES[typeKey];
-            
-            // Escolhe uma imagem aleatória do tipo sorteado
-            const itemImgKey = this.type.images[Math.floor(Math.random() * this.type.images.length)];
-            this.img = images[itemImgKey];
+            if (typeKey === 'EWASTE') this.img = images['ewaste' + (Math.random() > 0.5 ? '1' : '2')];
+            else if (typeKey === 'ORGANIC') this.img = images['org' + (Math.floor(Math.random() * 4) + 1)];
+            else if (typeKey === 'METAL') this.img = images['metal' + (Math.random() > 0.5 ? '1' : '2')];
+            else if (typeKey === 'GLASS') this.img = images['glass1'];
+            else this.img = images['plastic1'];
         }
         update() { this.y += this.speed; }
         draw() { if (this.img) ctx.drawImage(this.img, this.x, this.y, this.w, this.h); }
@@ -207,62 +177,73 @@
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
-        gameActive = true; score = 0; errors = 0; items = [];
-        updateHUD(); gameLoop();
+        gameActive = true; score = 0; errors = 0; frame = 0;
+        globalSpeedMultiplier = 0.10; lastAccelTime = 0; currentAccelInterval = 50;
+        items = []; updateHUD(); loop();
     }
 
-    function gameLoop() {
-        if (!gameActive) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
-        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
-        else { player.sprite = 'botFront'; }
-
-        if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
-
-        frame++;
-        if (frame % 80 === 0) items.push(new Trash());
-
-        // LÓGICA DE ATUALIZAÇÃO REESCRITA E ROBUSTA
-        for (let i = items.length - 1; i >= 0; i--) {
-            items[i].update();
-            items[i].draw();
-
-            // Colisão
-            if (items[i].y + items[i].h > player.y + 30 && items[i].y < player.y + 60 &&
-                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
-                
-                if (items[i].type.id === currentMode.id) {
-                    score += 10;
-                } else {
-                    errors++;
-                }
-                items.splice(i, 1);
-                updateHUD();
-                continue;
-            }
-
-            // Saiu da tela
-            if (items[i].y > canvas.height) {
-                errors++;
-                items.splice(i, 1);
-                updateHUD();
-            }
-        }
-
-        if (errors >= 20) {
-            gameActive = false;
-            document.getElementById('end-screen').classList.remove('hidden');
-            document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo: ${Math.floor(frame/60)}s`;
-        } else {
-            requestAnimationFrame(gameLoop);
-        }
+    function showAlert() {
+        const alert = document.getElementById('speed-alert');
+        alert.style.opacity = "1";
+        setTimeout(() => { alert.style.opacity = "0"; }, 2000);
     }
 
     function updateHUD() {
         document.getElementById('score-val').innerText = score;
         document.getElementById('error-val').innerText = errors;
+    }
+
+    function loop() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
+        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
+        else { player.sprite = 'botFront'; }
+        
+        if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
+
+        frame++;
+        const currentTime = Math.floor(frame / 60);
+        document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
+
+        // ACELERAÇÃO SUAVE PERMANENTE (0.1% a cada segundo)
+        globalSpeedMultiplier += 0.0001;
+
+        // ACELERAÇÃO EM MARCOS (Conforme o plano)
+        if (currentTime > 0 && (currentTime - lastAccelTime) >= currentAccelInterval) {
+            globalSpeedMultiplier += 0.08; 
+            lastAccelTime = currentTime;
+            showAlert();
+            if (currentTime >= 150 && currentTime < 190) currentAccelInterval = 40;
+            else if (currentTime >= 190 && currentTime < 220) currentAccelInterval = 30;
+            else if (currentTime >= 220) currentAccelInterval = 20;
+        }
+
+        // Spawn adaptativo
+        if (frame % Math.max(40, Math.floor(120 / (globalSpeedMultiplier * 3))) === 0) {
+            items.push(new Trash());
+        }
+
+        for (let i = items.length - 1; i >= 0; i--) {
+            items[i].update();
+            items[i].draw();
+
+            if (items[i].y + items[i].h > player.y + 30 && items[i].y < player.y + 60 &&
+                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
+                if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
+                items.splice(i, 1); updateHUD(); continue;
+            }
+            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
+        }
+
+        if (errors >= 20) {
+            gameActive = false;
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo Vivo: ${Math.floor(frame/60)}s`;
+        } else {
+            requestAnimationFrame(loop);
+        }
     }
 </script>
 </body>
