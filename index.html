@@ -9,6 +9,7 @@
         :root {
             --neon-green: #39ff14;
             --neon-blue: #00f3ff;
+            --neon-red: #ff3131;
             --dark-bg: #050505;
         }
 
@@ -31,29 +32,29 @@
             gap: 15px;
             padding: 15px;
             border: 2px solid var(--neon-blue);
-            background: rgba(10, 10, 25, 0.9);
+            background: rgba(10, 10, 25, 0.95);
             border-radius: 20px;
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
         }
 
         #game-area {
             position: relative;
             width: 800px;
-            height: 500px; /* Reduzi um pouco a altura para caber o painel embaixo */
-            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            height: 500px;
+            background: linear-gradient(to bottom, #0f0c29, #24243e);
             border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
         }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; }
 
         /* PAINEL INFERIOR */
         #bin-panel {
             width: 800px;
             display: flex;
             justify-content: center;
-            gap: 20px;
-            background: rgba(0, 0, 0, 0.6);
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.7);
             padding: 15px 0;
             border-radius: 0 0 15px 15px;
             border-top: 1px solid var(--neon-blue);
@@ -64,63 +65,48 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            transition: 0.3s;
-            filter: grayscale(0.5);
-            opacity: 0.7;
+            transition: 0.2s;
+            filter: grayscale(0.8);
+            opacity: 0.6;
+            width: 90px;
         }
 
-        .bin-btn img {
-            width: 65px;
-            height: 65px;
-            object-fit: contain;
-            margin-bottom: 5px;
-        }
-
-        .bin-btn span {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 10px;
-            color: white;
-        }
-
-        .bin-btn:hover {
-            transform: translateY(-5px);
-            filter: grayscale(0);
-            opacity: 1;
-        }
+        .bin-btn img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
+        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; text-align: center; }
 
         .bin-btn.active {
             filter: grayscale(0);
             opacity: 1;
             transform: scale(1.1);
         }
-
-        .bin-btn.active img {
-            filter: drop-shadow(0 0 10px var(--neon-green));
-        }
+        .bin-btn.active img { filter: drop-shadow(0 0 12px var(--neon-green)); }
 
         /* INTERFACE */
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 100; text-align: center;
         }
 
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin: 0; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
 
         button {
-            padding: 15px 40px;
+            padding: 15px 45px;
             font-family: 'Orbitron', sans-serif;
             background: transparent;
             color: var(--neon-green);
             border: 2px solid var(--neon-green);
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 25px;
             text-transform: uppercase;
+            font-weight: bold;
         }
+
+        button:hover { background: var(--neon-green); color: black; box-shadow: 0 0 20px var(--neon-green); }
 
         #hud {
             position: absolute;
@@ -131,7 +117,8 @@
             z-index: 10;
         }
 
-        .stat { background: rgba(0, 0, 0, 0.5); padding: 5px 15px; border: 1px solid var(--neon-blue); }
+        .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
+        .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
     </style>
 </head>
 <body>
@@ -140,20 +127,24 @@
     <div id="game-area">
         <div id="hud" class="hidden">
             <div class="stat">PONTOS: <span id="score-val">0</span></div>
-            <div class="stat">MODO: <span id="mode-text" style="color: #ff8c00;">E-WASTE</span></div>
+            <div style="text-align: center;">
+                <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">E-WASTE</span></div>
+            </div>
+            <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
 
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Use as SETAS do teclado para mover.<br>CLIQUE nas lixeiras abaixo para mudar o modo.</p>
+            <p>Use as SETAS para mover o Robô.<br>CLIQUE nas lixeiras abaixo para mudar o modo.</p>
+            <p style="color: var(--neon-blue); font-size: 0.9rem;">Cuidado: O lixo acelera com o tempo!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
         <div id="end-screen" class="overlay hidden">
-            <h1>PARABÉNS!</h1>
-            <p>Você é um mestre da reciclagem.</p>
-            <button onclick="window.open('URL_DO_FORMULARIO')">Responder Pesquisa UNIVESP</button>
-            <button onclick="location.reload()" style="font-size: 0.7rem; border-color: white; color: white;">Jogar Novamente</button>
+            <h1 id="end-msg-title">MISSÃO FINALIZADA</h1>
+            <p id="final-stats"></p>
+            <button onclick="window.open('URL_DO_FORMULARIO_PESQUISA')">Responder Pesquisa</button>
+            <button onclick="location.reload()" style="font-size: 0.7rem; border-color: white; color: white;">Recomeçar</button>
         </div>
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
@@ -183,18 +174,19 @@
     const ctx = canvas.getContext('2d');
     
     let score = 0;
+    let errors = 0;
     let gameActive = false;
     let items = [];
     let frame = 0;
+    let globalSpeedMultiplier = 1.0;
+    let lastSpawnX = 0;
 
-    // Configuração de Imagens (Baseado no seu GitHub)
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
         ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
         org1: 'pizza.png', org2: 'sorvete.png', org3: 'salada.png', org4: 'ceia-de-natal.png',
         metal1: 'lata-de-cerveja.png', metal2: 'clima.png', 
-        glass1: 'garrafa.png', 
-        plastic1: 'água.png'
+        glass1: 'garrafa.png', plastic1: 'água.png'
     };
 
     const WASTE_TYPES = {
@@ -207,30 +199,22 @@
 
     let currentMode = WASTE_TYPES.EWASTE;
     const images = {};
-    const keys = { left: false, right: false };
+    const keyState = {}; // Buffer para evitar travamentos
 
-    // Carregar
+    // Carregamento
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
     }
 
     const player = {
-        x: 350, y: 380, w: 100, h: 100, speed: 10,
+        x: 350, y: 385, w: 100, h: 100, speed: 12,
         sprite: 'botFront'
     };
 
-    // ESCUTA DE TECLAS CORRIGIDA
-    window.addEventListener('keydown', e => {
-        if (e.key === 'ArrowLeft') { keys.left = true; player.sprite = 'botLeft'; }
-        if (e.key === 'ArrowRight') { keys.right = true; player.sprite = 'botRight'; }
-    });
-
-    window.addEventListener('keyup', e => {
-        if (e.key === 'ArrowLeft') keys.left = false;
-        if (e.key === 'ArrowRight') keys.right = false;
-        if (!keys.left && !keys.right) player.sprite = 'botFront';
-    });
+    // Eventos de Teclado Melhorados
+    window.addEventListener('keydown', e => { keyState[e.key] = true; });
+    window.addEventListener('keyup', e => { keyState[e.key] = false; });
 
     function setMode(modeKey) {
         document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
@@ -242,10 +226,20 @@
 
     class Trash {
         constructor() {
-            this.x = Math.random() * (canvas.width - 50);
+            // Anti-Agrupamento: Garante distância X mínima de 150px do último
+            let newX;
+            do {
+                newX = Math.random() * (canvas.width - 60);
+            } while (Math.abs(newX - lastSpawnX) < 180); 
+            
+            this.x = newX;
+            lastSpawnX = newX;
             this.y = -60;
-            this.w = 50; this.h = 50;
-            this.speed = 2 + Math.random() * 3;
+            this.w = 55; this.h = 55;
+            
+            // Velocidade base + multiplicador global
+            this.speed = (2 + Math.random() * 2) * globalSpeedMultiplier;
+            
             const keysArr = Object.keys(WASTE_TYPES);
             const typeKey = keysArr[Math.floor(Math.random() * keysArr.length)];
             this.type = WASTE_TYPES[typeKey];
@@ -264,6 +258,10 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true;
+        score = 0;
+        errors = 0;
+        globalSpeedMultiplier = 1.0;
+        items = [];
         loop();
     }
 
@@ -271,40 +269,69 @@
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Movimento Corrigido
-        if (keys.left && player.x > 0) player.x -= player.speed;
-        if (keys.right && player.x < canvas.width - player.w) player.x += player.speed;
+        // Processar Movimento (Smooth Movement)
+        if (keyState['ArrowLeft'] && player.x > 0) {
+            player.x -= player.speed;
+            player.sprite = 'botLeft';
+        } else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) {
+            player.x += player.speed;
+            player.sprite = 'botRight';
+        } else {
+            player.sprite = 'botFront';
+        }
 
-        // Desenha Robô
+        // Desenhar Robô
         if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
-        // Gerar itens
+        // Dificuldade Progressiva: Aumenta a cada 1000 frames (~16 seg)
         frame++;
-        if (frame % 80 === 0) items.push(new Trash());
+        if (frame % 1000 === 0) {
+            globalSpeedMultiplier += 0.15;
+        }
+
+        // Gerar itens com intervalo controlado
+        if (frame % 90 === 0) items.push(new Trash());
 
         items.forEach((item, index) => {
             item.update();
             item.draw();
 
-            // Colisão
-            if (item.y + item.h > player.y + 20 && item.x + item.w > player.x && item.x < player.x + player.w) {
+            // Colisão Ajustada
+            if (item.y + item.h > player.y + 30 && item.y < player.y + 60 &&
+                item.x + item.w > player.x + 10 && item.x < player.x + player.w - 10) {
+                
                 if (item.type.id === currentMode.id) {
                     score += 10;
                 } else {
-                    score -= 5;
+                    errors++; // Errou a lixeira
                 }
                 items.splice(index, 1);
-                document.getElementById('score-val').innerText = score;
+                updateHUD();
             }
-            if (item.y > canvas.height) items.splice(index, 1);
+
+            // Caiu no chão (Erro)
+            if (item.y > canvas.height) {
+                errors++;
+                items.splice(index, 1);
+                updateHUD();
+            }
         });
 
-        if (score >= 300) {
-            gameActive = false;
-            document.getElementById('end-screen').classList.remove('hidden');
-        }
+        // Condição de fim (Opcional: 20 erros encerram)
+        if (errors >= 20) endGame();
 
         requestAnimationFrame(loop);
+    }
+
+    function updateHUD() {
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('error-val').innerText = errors;
+    }
+
+    function endGame() {
+        gameActive = false;
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('final-stats').innerHTML = `Pontuação: ${score} | Erros: ${errors}`;
     }
 </script>
 </body>
