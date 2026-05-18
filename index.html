@@ -21,6 +21,7 @@
         h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
         button { padding: 15px 45px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; margin-top: 25px; text-transform: uppercase; font-weight: bold; }
+        button:disabled { border-color: #444; color: #444; }
         #hud { position: absolute; top: 10px; left: 10px; width: 830px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; }
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
@@ -41,8 +42,8 @@
 
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Colete os itens com o recipiente correto!</p>
-            <button onclick="startGame()">Iniciar Missão</button>
+            <p id="loading-msg">Sincronizando banco de imagens...</p>
+            <button id="start-btn" onclick="startGame()" disabled>Aguarde...</button>
         </div>
 
         <div id="end-screen" class="overlay hidden">
@@ -69,7 +70,7 @@
     const ctx = canvas.getContext('2d');
     
     let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
-    let globalSpeedMultiplier = 0.15; 
+    let globalSpeedMultiplier = 0.10; 
     let lastSpawnX = 0, lastAccelTime = 0, currentAccelInterval = 50; 
 
     const imageFiles = {
@@ -81,19 +82,32 @@
     };
 
     const WASTE_TYPES = {
-        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste' },
-        PAPER: { id: 1, name: 'PAPEL', color: '#00bfff', btnId: 'btn-paper' },
-        ORGANIC: { id: 2, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic' },
-        METAL: { id: 3, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal' },
-        GLASS: { id: 4, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass' },
-        PLASTIC: { id: 5, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic' }
+        EWASTE: { id: 0, name: 'ELETRÔNICO', color: '#ff8c00', btnId: 'btn-ewaste', items: ['ewaste1', 'ewaste2'] },
+        PAPER: { id: 1, name: 'PAPEL', color: '#00bfff', btnId: 'btn-paper', items: [] },
+        ORGANIC: { id: 2, name: 'ORGÂNICO', color: '#8b4513', btnId: 'btn-organic', items: ['org1', 'org2', 'org3', 'org4'] },
+        METAL: { id: 3, name: 'METAIS', color: '#ffd700', btnId: 'btn-metal', items: ['metal1', 'metal2'] },
+        GLASS: { id: 4, name: 'VIDRO', color: '#32cd32', btnId: 'btn-glass', items: ['glass1'] },
+        PLASTIC: { id: 5, name: 'PLÁSTICO', color: '#ff4500', btnId: 'btn-plastic', items: ['plastic1'] }
     };
 
     let currentMode = WASTE_TYPES.EWASTE;
     const images = {}, keyState = {};
 
+    // Carregamento de imagens
+    let totalFiles = Object.keys(imageFiles).length;
+    let loadedFiles = 0;
+
     for (let key in imageFiles) {
         images[key] = new Image();
+        images[key].onload = images[key].onerror = () => {
+            loadedFiles++;
+            if(loadedFiles >= totalFiles) {
+                const btn = document.getElementById('start-btn');
+                btn.disabled = false;
+                btn.innerText = "Iniciar Missão";
+                document.getElementById('loading-msg').innerText = "Imagens carregadas com sucesso!";
+            }
+        };
         images[key].src = imageFiles[key];
     }
 
@@ -105,39 +119,35 @@
     function setMode(modeKey) {
         document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
         currentMode = WASTE_TYPES[modeKey];
-        const btn = document.getElementById(currentMode.btnId);
-        if(btn) btn.classList.add('active');
+        document.getElementById(currentMode.btnId).classList.add('active');
         document.getElementById('mode-text').innerText = currentMode.name;
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
+    // Função para verificar se a imagem de um item está pronta
+    function isImageReady(imgKey) {
+        const img = images[imgKey];
+        return img && img.complete && img.naturalWidth !== 0;
+    }
+
     class Trash {
-        constructor() {
+        constructor(imgKey, type) {
             let newX = Math.random() * (canvas.width - 60);
-            if (Math.abs(newX - lastSpawnX) < 150) newX = (newX + 200) % (canvas.width - 60);
+            if (Math.abs(newX - lastSpawnX) < 160) newX = (newX + 250) % (canvas.width - 60);
             this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
             this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
-            
-            const keysArr = Object.keys(WASTE_TYPES);
-            let typeKey;
-            do { typeKey = keysArr[Math.floor(Math.random() * keysArr.length)]; } while (typeKey === 'PAPER');
-
-            this.type = WASTE_TYPES[typeKey];
-            if (typeKey === 'EWASTE') this.img = images['ewaste' + (Math.random() > 0.5 ? '1' : '2')];
-            else if (typeKey === 'ORGANIC') this.img = images['org' + (Math.floor(Math.random() * 4) + 1)];
-            else if (typeKey === 'METAL') this.img = images['metal' + (Math.random() > 0.5 ? '1' : '2')];
-            else if (typeKey === 'GLASS') this.img = images['glass1'];
-            else this.img = images['plastic1'];
+            this.imgKey = imgKey;
+            this.type = type;
         }
         update() { this.y += this.speed; }
-        draw() { if (this.img) ctx.drawImage(this.img, this.x, this.y, this.w, this.h); }
+        draw() { ctx.drawImage(images[this.imgKey], this.x, this.y, this.w, this.h); }
     }
 
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.15; items = []; updateHUD(); loop();
+        globalSpeedMultiplier = 0.10; items = []; updateHUD(); loop();
     }
 
     function updateHUD() {
@@ -147,41 +157,48 @@
 
     function loop() {
         if (!gameActive) return;
-        requestAnimationFrame(loop); // Chamada no início para segurança
+        requestAnimationFrame(loop);
         
-        try {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
-            else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
-            else { player.sprite = 'botFront'; }
-            
-            if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Movimentação
+        if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
+        else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
+        else { player.sprite = 'botFront'; }
+        
+        if (isImageReady(player.sprite)) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
-            frame++;
-            const currentTime = Math.floor(frame / 60);
-            document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
-            globalSpeedMultiplier += 0.0001;
+        frame++;
+        const currentTime = Math.floor(frame / 60);
+        document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
+        globalSpeedMultiplier += 0.0001;
 
-            if (frame % 100 === 0) items.push(new Trash());
+        // Tenta gerar lixo apenas a cada 90 frames
+        if (frame % 90 === 0) {
+            const types = Object.keys(WASTE_TYPES).filter(t => WASTE_TYPES[t].items.length > 0);
+            const randomTypeKey = types[Math.floor(Math.random() * types.length)];
+            const potentialItems = WASTE_TYPES[randomTypeKey].items;
+            const randomItemKey = potentialItems[Math.floor(Math.random() * potentialItems.length)];
 
-            for (let i = items.length - 1; i >= 0; i--) {
-                items[i].update();
-                items[i].draw();
-
-                // Colisão
-                if (items[i].y + items[i].h > player.y + 20 && items[i].y < player.y + 80 &&
-                    items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
-                    
-                    if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
-                    items.splice(i, 1); updateHUD(); continue;
-                }
-
-                if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
+            // SÓ LANÇA SE A IMAGEM ESTIVER PRONTA
+            if (isImageReady(randomItemKey)) {
+                items.push(new Trash(randomItemKey, WASTE_TYPES[randomTypeKey]));
             }
+        }
 
-            if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); }
-        } catch (e) { console.error("Erro no motor:", e); }
+        for (let i = items.length - 1; i >= 0; i--) {
+            items[i].update();
+            items[i].draw();
+
+            if (items[i].y + items[i].h > player.y + 20 && items[i].y < player.y + 80 &&
+                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
+                if (items[i].type.id === currentMode.id) score += 10; else errors++;
+                items.splice(i, 1); updateHUD(); continue;
+            }
+            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
+        }
+
+        if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); }
     }
 </script>
 </body>
