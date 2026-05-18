@@ -14,60 +14,37 @@
         }
 
         body {
-            margin: 0;
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            margin: 0; background-color: var(--dark-bg); color: white;
+            font-family: 'Roboto', sans-serif; display: flex;
+            justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
         }
 
         #main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 15px;
-            border: 2px solid var(--neon-blue);
-            background: rgba(10, 10, 25, 0.95);
-            border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 10px; padding: 15px; border: 2px solid var(--neon-blue);
+            background: rgba(10, 10, 25, 0.95); border-radius: 20px;
             box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
         }
 
         #game-area {
-            position: relative;
-            width: 850px;
-            height: 450px;
+            position: relative; width: 850px; height: 450px;
             background: linear-gradient(to bottom, #0f0c29, #24243e);
-            border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
         }
 
         canvas { display: block; }
 
         #bin-panel {
-            width: 850px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 0;
-            border-radius: 0 0 15px 15px;
-            border-top: 2px solid var(--neon-blue);
+            width: 850px; display: flex; justify-content: center; gap: 15px;
+            background: rgba(0, 0, 0, 0.8); padding: 15px 0;
+            border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue);
         }
 
         .bin-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.2s;
-            filter: grayscale(0.9);
-            opacity: 0.5;
-            width: 100px;
+            display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; transition: 0.2s; filter: grayscale(0.9);
+            opacity: 0.5; width: 100px;
         }
 
         .bin-btn img { width: 75px; height: 75px; object-fit: contain; margin-bottom: 5px; }
@@ -77,54 +54,37 @@
         .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
 
         .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 100; text-align: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100; text-align: center;
         }
 
         h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
 
         button {
-            padding: 15px 45px;
-            font-family: 'Orbitron', sans-serif;
-            background: transparent;
-            color: var(--neon-green);
-            border: 2px solid var(--neon-green);
-            cursor: pointer;
-            margin-top: 25px;
-            text-transform: uppercase;
-            font-weight: bold;
+            padding: 15px 45px; font-family: 'Orbitron', sans-serif;
+            background: transparent; color: var(--neon-green);
+            border: 2px solid var(--neon-green); cursor: pointer;
+            margin-top: 25px; text-transform: uppercase; font-weight: bold;
         }
 
         button:hover { background: var(--neon-green); color: black; box-shadow: 0 0 20px var(--neon-green); }
 
         #hud {
-            position: absolute;
-            top: 10px; left: 10px; width: 830px;
+            position: absolute; top: 10px; left: 10px; width: 830px;
             display: flex; justify-content: space-between;
-            font-family: 'Orbitron', sans-serif;
-            pointer-events: none;
-            z-index: 10;
+            font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10;
         }
 
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
 
         #speed-alert {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--neon-blue);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s;
-            z-index: 20;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: var(--neon-blue); font-family: 'Orbitron', sans-serif;
+            font-size: 2rem; pointer-events: none; opacity: 0;
+            transition: opacity 0.5s; z-index: 20;
         }
     </style>
 </head>
@@ -145,7 +105,7 @@
 
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>O lixo cairá lentamente. <br> Separe o máximo que conseguir!</p>
+            <p>O lixo cairá bem lentamente agora. <br> Separe os resíduos com atenção!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
@@ -186,7 +146,7 @@
     
     let score = 0; let errors = 0; let gameActive = false;
     let items = []; let frame = 0; 
-    let globalSpeedMultiplier = 0.25; // DESACELERADO 3x
+    let globalSpeedMultiplier = 0.18; // VELOCIDADE REDUZIDA
     let lastSpawnX = 0;
     let lastAccelTime = 0;
     let currentAccelInterval = 50; 
@@ -224,7 +184,8 @@
     function setMode(modeKey) {
         document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
         currentMode = WASTE_TYPES[modeKey];
-        document.getElementById(currentMode.btnId).classList.add('active');
+        const btn = document.getElementById(currentMode.btnId);
+        if(btn) btn.classList.add('active');
         document.getElementById('mode-text').innerText = currentMode.name;
         document.getElementById('mode-text').style.color = currentMode.color;
     }
@@ -234,9 +195,7 @@
             let newX;
             do { newX = Math.random() * (canvas.width - 60); } while (Math.abs(newX - lastSpawnX) < 180); 
             this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
-            
-            // Velocidade base reduzida internamente também
-            this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
+            this.speed = (1.2 + Math.random() * 1.5) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
             let typeKey;
@@ -257,14 +216,19 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.25; lastAccelTime = 0; currentAccelInterval = 50;
-        items = []; loop();
+        globalSpeedMultiplier = 0.18; lastAccelTime = 0; currentAccelInterval = 50;
+        items = []; updateHUD(); loop();
     }
 
     function showAlert() {
         const alert = document.getElementById('speed-alert');
         alert.style.opacity = "1";
         setTimeout(() => { alert.style.opacity = "0"; }, 2000);
+    }
+
+    function updateHUD() {
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('error-val').innerText = errors;
     }
 
     function loop() {
@@ -281,45 +245,53 @@
         const currentTime = Math.floor(frame / 60);
         document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
 
-        // LÓGICA DE ACELERAÇÃO (Sincronizada com o seu pedido)
         if (currentTime > 0 && (currentTime - lastAccelTime) >= currentAccelInterval) {
-            globalSpeedMultiplier += 0.12; // Aumento sutil
+            globalSpeedMultiplier += 0.12;
             lastAccelTime = currentTime;
             showAlert();
-
             if (currentTime >= 150 && currentTime < 190) currentAccelInterval = 40;
             else if (currentTime >= 190 && currentTime < 220) currentAccelInterval = 30;
             else if (currentTime >= 220) currentAccelInterval = 20;
         }
 
-        // Spawn de itens proporcional à velocidade
-        if (frame % Math.max(40, Math.floor(100 / (globalSpeedMultiplier * 2))) === 0) {
+        if (frame % Math.max(40, Math.floor(100 / (globalSpeedMultiplier * 2.5))) === 0) {
             items.push(new Trash());
         }
 
-        items.forEach((item, index) => {
-            item.update(); item.draw();
-            if (item.y + item.h > player.y + 30 && item.y < player.y + 60 &&
-                item.x + item.w > player.x + 10 && item.x < player.x + player.w - 10) {
-                if (item.type.id === currentMode.id) score += 10; else errors++;
-                items.splice(index, 1); updateHUD();
+        // LÓGICA DE ATUALIZAÇÃO SEM CONGELAMENTO
+        for (let i = items.length - 1; i >= 0; i--) {
+            items[i].update();
+            items[i].draw();
+
+            // Colisão
+            if (items[i].y + items[i].h > player.y + 30 && items[i].y < player.y + 60 &&
+                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
+                
+                if (items[i].type.id === currentMode.id) {
+                    score += 10;
+                } else {
+                    errors++;
+                }
+                items.splice(i, 1);
+                updateHUD();
+                continue; // Pula para o próximo item
             }
-            if (item.y > canvas.height) { errors++; items.splice(index, 1); updateHUD(); }
-        });
 
-        if (errors >= 20) endGame();
-        requestAnimationFrame(loop);
-    }
+            // Saiu da tela
+            if (items[i].y > canvas.height) {
+                errors++;
+                items.splice(i, 1);
+                updateHUD();
+            }
+        }
 
-    function updateHUD() {
-        document.getElementById('score-val').innerText = score;
-        document.getElementById('error-val').innerText = errors;
-    }
-
-    function endGame() {
-        gameActive = false;
-        document.getElementById('end-screen').classList.remove('hidden');
-        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo: ${Math.floor(frame/60)}s`;
+        if (errors >= 20) {
+            gameActive = false;
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo: ${Math.floor(frame/60)}s`;
+        } else {
+            requestAnimationFrame(loop);
+        }
     }
 </script>
 </body>
