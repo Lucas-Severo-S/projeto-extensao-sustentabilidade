@@ -21,14 +21,13 @@
         h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
         .hidden { display: none !important; }
         button { padding: 15px 45px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; margin-top: 25px; text-transform: uppercase; font-weight: bold; }
-        button:disabled { border-color: #444; color: #444; }
         #hud { position: absolute; top: 10px; left: 10px; width: 830px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; }
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
+        #speed-alert { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 2rem; pointer-events: none; opacity: 0; transition: opacity 0.5s; z-index: 20; }
     </style>
 </head>
 <body>
-
 <div id="main-container">
     <div id="game-area">
         <div id="hud" class="hidden">
@@ -39,22 +38,19 @@
             </div>
             <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
-
+        <div id="speed-alert">VELOCIDADE AUMENTOU!</div>
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p id="loading-msg">Sincronizando banco de imagens...</p>
-            <button id="start-btn" onclick="startGame()" disabled>Aguarde...</button>
+            <p>Os itens caem a cada 2-7 segundos.<br>Prepare-se para reciclar!</p>
+            <button id="start-btn" onclick="startGame()">Iniciar Missão</button>
         </div>
-
         <div id="end-screen" class="overlay hidden">
             <h1>MISSÃO FINALIZADA</h1>
             <p id="final-stats"></p>
             <button onclick="location.reload()">Recomeçar</button>
         </div>
-
         <canvas id="gameCanvas" width="850" height="450"></canvas>
     </div>
-
     <div id="bin-panel">
         <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>ELETRÔNICO</span></div>
         <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')"><img src="6.png"><span>PAPEL</span></div>
@@ -68,17 +64,16 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    
     let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
-    let globalSpeedMultiplier = 0.10; 
-    let lastSpawnX = 0, lastAccelTime = 0, currentAccelInterval = 50; 
+    let globalSpeedMultiplier = 0.12; let lastSpawnTime = 0; let nextSpawnDelay = 3000;
+    let lastAccelTime = 0; let currentAccelInterval = 50;
 
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
         ewaste1: 'placa-de-video.png', ewaste2: 'teclado.png',
         org1: 'pizza.png', org2: 'ceia-de-natal.png', org3: 'salada.png', org4: 'sorvete.png',
         metal1: 'lata-de-cerveja.png', metal2: 'parafuso.png', 
-        glass1: 'garrafa.png', plastic1: 'água.png'
+        glass1: 'garrafa.png', plastic1: 'agua.png'
     };
 
     const WASTE_TYPES = {
@@ -93,21 +88,8 @@
     let currentMode = WASTE_TYPES.EWASTE;
     const images = {}, keyState = {};
 
-    // Carregamento de imagens
-    let totalFiles = Object.keys(imageFiles).length;
-    let loadedFiles = 0;
-
     for (let key in imageFiles) {
         images[key] = new Image();
-        images[key].onload = images[key].onerror = () => {
-            loadedFiles++;
-            if(loadedFiles >= totalFiles) {
-                const btn = document.getElementById('start-btn');
-                btn.disabled = false;
-                btn.innerText = "Iniciar Missão";
-                document.getElementById('loading-msg').innerText = "Imagens carregadas com sucesso!";
-            }
-        };
         images[key].src = imageFiles[key];
     }
 
@@ -124,7 +106,6 @@
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
-    // Função para verificar se a imagem de um item está pronta
     function isImageReady(imgKey) {
         const img = images[imgKey];
         return img && img.complete && img.naturalWidth !== 0;
@@ -132,12 +113,9 @@
 
     class Trash {
         constructor(imgKey, type) {
-            let newX = Math.random() * (canvas.width - 60);
-            if (Math.abs(newX - lastSpawnX) < 160) newX = (newX + 250) % (canvas.width - 60);
-            this.x = newX; lastSpawnX = newX; this.y = -60; this.w = 55; this.h = 55;
+            this.x = Math.random() * (canvas.width - 60); this.y = -60; this.w = 55; this.h = 55;
             this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
-            this.imgKey = imgKey;
-            this.type = type;
+            this.imgKey = imgKey; this.type = type;
         }
         update() { this.y += this.speed; }
         draw() { ctx.drawImage(images[this.imgKey], this.x, this.y, this.w, this.h); }
@@ -147,7 +125,14 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.10; items = []; updateHUD(); loop();
+        globalSpeedMultiplier = 0.12; items = []; lastSpawnTime = Date.now();
+        updateHUD(); loop();
+    }
+
+    function showAlert() {
+        const alert = document.getElementById('speed-alert');
+        alert.style.opacity = "1";
+        setTimeout(() => { alert.style.opacity = "0"; }, 2000);
     }
 
     function updateHUD() {
@@ -158,10 +143,8 @@
     function loop() {
         if (!gameActive) return;
         requestAnimationFrame(loop);
-        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Movimentação
         if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
         else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
         else { player.sprite = 'botFront'; }
@@ -169,35 +152,40 @@
         if (isImageReady(player.sprite)) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
         frame++;
-        const currentTime = Math.floor(frame / 60);
-        document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
-        globalSpeedMultiplier += 0.0001;
+        const currentTimeMillis = Date.now();
+        const secondsElapsed = Math.floor(frame / 60);
+        document.getElementById('time-text').innerText = `TEMPO: ${secondsElapsed}s`;
 
-        // Tenta gerar lixo apenas a cada 90 frames
-        if (frame % 90 === 0) {
+        // ACELERAÇÃO GRADUAL
+        if (secondsElapsed > 0 && (secondsElapsed - lastAccelTime) >= currentAccelInterval) {
+            globalSpeedMultiplier += 0.10; lastAccelTime = secondsElapsed; showAlert();
+            if (secondsElapsed >= 150 && secondsElapsed < 190) currentAccelInterval = 40;
+            else if (secondsElapsed >= 190 && secondsElapsed < 220) currentAccelInterval = 30;
+            else if (secondsElapsed >= 220) currentAccelInterval = 20;
+        }
+
+        // SPAWN CONTROLADO (2-7 SEGUNDOS)
+        if (currentTimeMillis - lastSpawnTime > nextSpawnDelay) {
             const types = Object.keys(WASTE_TYPES).filter(t => WASTE_TYPES[t].items.length > 0);
             const randomTypeKey = types[Math.floor(Math.random() * types.length)];
-            const potentialItems = WASTE_TYPES[randomTypeKey].items;
-            const randomItemKey = potentialItems[Math.floor(Math.random() * potentialItems.length)];
+            const randomItemKey = WASTE_TYPES[randomTypeKey].items[Math.floor(Math.random() * WASTE_TYPES[randomTypeKey].items.length)];
 
-            // SÓ LANÇA SE A IMAGEM ESTIVER PRONTA
             if (isImageReady(randomItemKey)) {
                 items.push(new Trash(randomItemKey, WASTE_TYPES[randomTypeKey]));
+                lastSpawnTime = currentTimeMillis;
+                nextSpawnDelay = 2000 + Math.random() * 5000;
             }
         }
 
         for (let i = items.length - 1; i >= 0; i--) {
-            items[i].update();
-            items[i].draw();
-
-            if (items[i].y + items[i].h > player.y + 20 && items[i].y < player.y + 80 &&
+            items[i].update(); items[i].draw();
+            if (items[i].y + items[i].h > player.y + 25 && items[i].y < player.y + 75 &&
                 items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
                 if (items[i].type.id === currentMode.id) score += 10; else errors++;
                 items.splice(i, 1); updateHUD(); continue;
             }
             if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
         }
-
         if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); }
     }
 </script>
