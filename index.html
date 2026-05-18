@@ -29,7 +29,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             padding: 15px;
             border: 2px solid var(--neon-blue);
             background: rgba(10, 10, 25, 0.95);
@@ -40,7 +40,7 @@
         #game-area {
             position: relative;
             width: 800px;
-            height: 500px;
+            height: 450px;
             background: linear-gradient(to bottom, #0f0c29, #24243e);
             border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
@@ -48,16 +48,16 @@
 
         canvas { display: block; }
 
-        /* PAINEL INFERIOR */
+        /* PAINEL INFERIOR AMPLIADO */
         #bin-panel {
             width: 800px;
             display: flex;
             justify-content: center;
-            gap: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 0;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 0;
             border-radius: 0 0 15px 15px;
-            border-top: 1px solid var(--neon-blue);
+            border-top: 2px solid var(--neon-blue);
         }
 
         .bin-btn {
@@ -66,20 +66,32 @@
             align-items: center;
             cursor: pointer;
             transition: 0.2s;
-            filter: grayscale(0.8);
-            opacity: 0.6;
-            width: 90px;
+            filter: grayscale(0.9);
+            opacity: 0.5;
+            width: 110px; /* Aumentado */
         }
 
-        .bin-btn img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
-        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; text-align: center; }
+        .bin-btn img { 
+            width: 90px; /* TAMANHO AMPLIADO */
+            height: 90px; 
+            object-fit: contain; 
+            margin-bottom: 8px; 
+        }
+
+        .bin-btn span { 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 11px; 
+            color: white; 
+            text-align: center;
+            font-weight: bold;
+        }
 
         .bin-btn.active {
             filter: grayscale(0);
             opacity: 1;
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
-        .bin-btn.active img { filter: drop-shadow(0 0 12px var(--neon-green)); }
+        .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
 
         /* INTERFACE */
         .overlay {
@@ -147,7 +159,7 @@
             <button onclick="location.reload()" style="font-size: 0.7rem; border-color: white; color: white;">Recomeçar</button>
         </div>
 
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
     </div>
 
     <div id="bin-panel">
@@ -199,20 +211,18 @@
 
     let currentMode = WASTE_TYPES.EWASTE;
     const images = {};
-    const keyState = {}; // Buffer para evitar travamentos
+    const keyState = {};
 
-    // Carregamento
     for (let key in imageFiles) {
         images[key] = new Image();
         images[key].src = imageFiles[key];
     }
 
     const player = {
-        x: 350, y: 385, w: 100, h: 100, speed: 12,
+        x: 350, y: 340, w: 100, h: 100, speed: 12,
         sprite: 'botFront'
     };
 
-    // Eventos de Teclado Melhorados
     window.addEventListener('keydown', e => { keyState[e.key] = true; });
     window.addEventListener('keyup', e => { keyState[e.key] = false; });
 
@@ -226,7 +236,6 @@
 
     class Trash {
         constructor() {
-            // Anti-Agrupamento: Garante distância X mínima de 150px do último
             let newX;
             do {
                 newX = Math.random() * (canvas.width - 60);
@@ -236,8 +245,6 @@
             lastSpawnX = newX;
             this.y = -60;
             this.w = 55; this.h = 55;
-            
-            // Velocidade base + multiplicador global
             this.speed = (2 + Math.random() * 2) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
@@ -258,10 +265,7 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true;
-        score = 0;
-        errors = 0;
-        globalSpeedMultiplier = 1.0;
-        items = [];
+        score = 0; errors = 0; globalSpeedMultiplier = 1.0; items = [];
         loop();
     }
 
@@ -269,7 +273,6 @@
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Processar Movimento (Smooth Movement)
         if (keyState['ArrowLeft'] && player.x > 0) {
             player.x -= player.speed;
             player.sprite = 'botLeft';
@@ -280,36 +283,28 @@
             player.sprite = 'botFront';
         }
 
-        // Desenhar Robô
         if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
-        // Dificuldade Progressiva: Aumenta a cada 1000 frames (~16 seg)
         frame++;
-        if (frame % 1000 === 0) {
-            globalSpeedMultiplier += 0.15;
-        }
-
-        // Gerar itens com intervalo controlado
+        if (frame % 1000 === 0) globalSpeedMultiplier += 0.15;
         if (frame % 90 === 0) items.push(new Trash());
 
         items.forEach((item, index) => {
             item.update();
             item.draw();
 
-            // Colisão Ajustada
             if (item.y + item.h > player.y + 30 && item.y < player.y + 60 &&
                 item.x + item.w > player.x + 10 && item.x < player.x + player.w - 10) {
                 
                 if (item.type.id === currentMode.id) {
                     score += 10;
                 } else {
-                    errors++; // Errou a lixeira
+                    errors++;
                 }
                 items.splice(index, 1);
                 updateHUD();
             }
 
-            // Caiu no chão (Erro)
             if (item.y > canvas.height) {
                 errors++;
                 items.splice(index, 1);
@@ -317,9 +312,7 @@
             }
         });
 
-        // Condição de fim (Opcional: 20 erros encerram)
         if (errors >= 20) endGame();
-
         requestAnimationFrame(loop);
     }
 
@@ -331,7 +324,7 @@
     function endGame() {
         gameActive = false;
         document.getElementById('end-screen').classList.remove('hidden');
-        document.getElementById('final-stats').innerHTML = `Pontuação: ${score} | Erros: ${errors}`;
+        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Erros: ${errors}`;
     }
 </script>
 </body>
