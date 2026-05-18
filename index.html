@@ -2,55 +2,96 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EcoBot: Missão Sustentável 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --dark-bg: #050505; }
-        body { margin: 0; background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #main-container { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px; border: 2px solid var(--neon-blue); background: rgba(10, 10, 25, 0.95); border-radius: 20px; box-shadow: 0 0 40px rgba(0, 243, 255, 0.2); }
-        #game-area { position: relative; width: 850px; height: 450px; background: linear-gradient(to bottom, #0f0c29, #24243e); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
-        canvas { display: block; }
-        #bin-panel { width: 850px; display: flex; justify-content: center; gap: 15px; background: rgba(0, 0, 0, 0.8); padding: 15px 0; border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue); }
-        .bin-btn { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; filter: grayscale(0.9); opacity: 0.5; width: 100px; }
-        .bin-btn img { width: 75px; height: 75px; object-fit: contain; margin-bottom: 5px; }
-        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; font-weight: bold; }
+        
+        * { touch-action: manipulation; } /* Melhora resposta ao toque no celular */
+
+        body { 
+            margin: 0; background-color: var(--dark-bg); color: white; 
+            font-family: 'Roboto', sans-serif; display: flex; 
+            justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden;
+        }
+
+        #main-container { 
+            display: flex; flex-direction: column; align-items: center; 
+            width: 95%; max-width: 850px; gap: 10px; padding: 10px; 
+            border: 2px solid var(--neon-blue); background: rgba(10, 10, 25, 0.95); 
+            border-radius: 20px; box-shadow: 0 0 40px rgba(0, 243, 255, 0.2); 
+        }
+
+        #game-area { 
+            position: relative; width: 100%; height: 400px; 
+            background: linear-gradient(to bottom, #0f0c29, #24243e); 
+            border: 1px solid rgba(255,255,255,0.1); overflow: hidden; 
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* PAINEL DE LIXEIRAS RESPONSIVO */
+        #bin-panel { 
+            width: 100%; display: grid; 
+            grid-template-columns: repeat(3, 1fr); /* 3 colunas no celular para caber melhor */
+            gap: 10px; background: rgba(0, 0, 0, 0.8); 
+            padding: 10px 0; border-radius: 0 0 15px 15px; border-top: 2px solid var(--neon-blue); 
+        }
+
+        @media (min-width: 600px) {
+            #bin-panel { grid-template-columns: repeat(6, 1fr); } /* 6 colunas no PC */
+        }
+
+        .bin-btn { 
+            display: flex; flex-direction: column; align-items: center; 
+            cursor: pointer; transition: 0.2s; filter: grayscale(0.9); opacity: 0.5; 
+        }
+
+        .bin-btn img { width: 60px; height: 60px; object-fit: contain; }
+        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 8px; color: white; font-weight: bold; margin-top: 4px; }
         .bin-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
-        .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; text-align: center; }
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 2.8rem; }
+        .bin-btn.active img { filter: drop-shadow(0 0 10px var(--neon-green)); }
+
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; text-align: center; padding: 20px; box-sizing: border-box; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); font-size: 1.8rem; margin: 0; }
         .hidden { display: none !important; }
-        button { padding: 15px 45px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; margin-top: 25px; text-transform: uppercase; font-weight: bold; }
-        #hud { position: absolute; top: 10px; left: 10px; width: 830px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; }
-        .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
-        .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
-        #speed-alert { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 2rem; pointer-events: none; opacity: 0; transition: opacity 0.5s; z-index: 20; }
+
+        button { padding: 12px 30px; font-family: 'Orbitron', sans-serif; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); cursor: pointer; margin-top: 15px; text-transform: uppercase; font-weight: bold; }
+
+        #hud { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; pointer-events: none; z-index: 10; font-size: 0.7rem; }
+        .stat { background: rgba(0, 0, 0, 0.6); padding: 5px 10px; border: 1px solid var(--neon-blue); }
     </style>
 </head>
 <body>
+
 <div id="main-container">
     <div id="game-area">
         <div id="hud" class="hidden">
             <div class="stat">PONTOS: <span id="score-val">0</span></div>
             <div style="text-align: center;">
-                <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
-                <div id="time-text" style="font-size: 0.7rem; margin-top: 5px;">TEMPO: 0s</div>
+                <div class="stat">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
+                <div id="time-text" style="font-size: 0.6rem; margin-top: 2px;">0s</div>
             </div>
-            <div class="stat err">ERROS: <span id="error-val">0</span></div>
+            <div class="stat" style="border-color: var(--neon-red); color: var(--neon-red);">ERROS: <span id="error-val">0</span></div>
         </div>
-        <div id="speed-alert">VELOCIDADE AUMENTOU!</div>
+
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Os itens caem a cada 2-7 segundos.<br>Prepare-se para reciclar!</p>
-            <button id="start-btn" onclick="startGame()">Iniciar Missão</button>
+            <p style="font-size: 0.8rem;">PC: Use as setas.<br>CELULAR: Toque nas laterais da tela para mover o robô.</p>
+            <button onclick="startGame()">Iniciar Missão</button>
         </div>
+
         <div id="end-screen" class="overlay hidden">
-            <h1>MISSÃO FINALIZADA</h1>
+            <h1>FIM DA MISSÃO</h1>
             <p id="final-stats"></p>
             <button onclick="location.reload()">Recomeçar</button>
         </div>
-        <canvas id="gameCanvas" width="850" height="450"></canvas>
+
+        <canvas id="gameCanvas"></canvas>
     </div>
+
     <div id="bin-panel">
         <div class="bin-btn active" id="btn-ewaste" onclick="setMode('EWASTE')"><img src="3.png"><span>ELETRÔNICO</span></div>
         <div class="bin-btn" id="btn-paper" onclick="setMode('PAPER')"><img src="6.png"><span>PAPEL</span></div>
@@ -64,9 +105,18 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    
+    // Ajuste dinâmico do canvas
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
     let score = 0, errors = 0, gameActive = false, items = [], frame = 0; 
-    let globalSpeedMultiplier = 0.12; let lastSpawnTime = 0; let nextSpawnDelay = 3000;
-    let lastAccelTime = 0; let currentAccelInterval = 50;
+    let globalSpeedMultiplier = 0.12; 
+    let lastSpawnTime = 0, nextSpawnDelay = 3000;
 
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
@@ -93,10 +143,24 @@
         images[key].src = imageFiles[key];
     }
 
-    const player = { x: 375, y: 340, w: 100, h: 100, speed: 12, sprite: 'botFront' };
+    const player = { x: 150, y: 300, w: 80, h: 80, speed: 10, sprite: 'botFront' };
 
+    // CONTROLES PC
     window.addEventListener('keydown', e => { keyState[e.key] = true; });
     window.addEventListener('keyup', e => { keyState[e.key] = false; });
+
+    // CONTROLES MOBILE (Toque no Canvas)
+    canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+        if (touchX < canvas.width / 2) { keyState['ArrowLeft'] = true; } 
+        else { keyState['ArrowRight'] = true; }
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', () => {
+        keyState['ArrowLeft'] = false;
+        keyState['ArrowRight'] = false;
+    });
 
     function setMode(modeKey) {
         document.querySelectorAll('.bin-btn').forEach(el => el.classList.remove('active'));
@@ -106,38 +170,29 @@
         document.getElementById('mode-text').style.color = currentMode.color;
     }
 
-    function isImageReady(imgKey) {
-        const img = images[imgKey];
-        return img && img.complete && img.naturalWidth !== 0;
-    }
-
     class Trash {
         constructor(imgKey, type) {
-            this.x = Math.random() * (canvas.width - 60); this.y = -60; this.w = 55; this.h = 55;
+            this.x = Math.random() * (canvas.width - 50);
+            this.y = -50; this.w = 50; this.h = 50;
             this.speed = (1.5 + Math.random() * 2) * globalSpeedMultiplier;
             this.imgKey = imgKey; this.type = type;
         }
         update() { this.y += this.speed; }
-        draw() { ctx.drawImage(images[this.imgKey], this.x, this.y, this.w, this.h); }
+        draw() { 
+            if (images[this.imgKey] && images[this.imgKey].complete) {
+                ctx.drawImage(images[this.imgKey], this.x, this.y, this.w, this.h); 
+            }
+        }
     }
 
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         gameActive = true; score = 0; errors = 0; frame = 0;
-        globalSpeedMultiplier = 0.12; items = []; lastSpawnTime = Date.now();
-        updateHUD(); loop();
-    }
-
-    function showAlert() {
-        const alert = document.getElementById('speed-alert');
-        alert.style.opacity = "1";
-        setTimeout(() => { alert.style.opacity = "0"; }, 2000);
-    }
-
-    function updateHUD() {
-        document.getElementById('score-val').innerText = score;
-        document.getElementById('error-val').innerText = errors;
+        player.x = canvas.width / 2 - 40;
+        player.y = canvas.height - 90;
+        items = []; lastSpawnTime = Date.now();
+        loop();
     }
 
     function loop() {
@@ -149,44 +204,36 @@
         else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
         else { player.sprite = 'botFront'; }
         
-        if (isImageReady(player.sprite)) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
+        if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
         frame++;
-        const currentTimeMillis = Date.now();
-        const secondsElapsed = Math.floor(frame / 60);
-        document.getElementById('time-text').innerText = `TEMPO: ${secondsElapsed}s`;
+        const currentTime = Date.now();
+        document.getElementById('time-text').innerText = `${Math.floor(frame / 60)}s`;
+        globalSpeedMultiplier += 0.0001;
 
-        // ACELERAÇÃO GRADUAL
-        if (secondsElapsed > 0 && (secondsElapsed - lastAccelTime) >= currentAccelInterval) {
-            globalSpeedMultiplier += 0.10; lastAccelTime = secondsElapsed; showAlert();
-            if (secondsElapsed >= 150 && secondsElapsed < 190) currentAccelInterval = 40;
-            else if (secondsElapsed >= 190 && secondsElapsed < 220) currentAccelInterval = 30;
-            else if (secondsElapsed >= 220) currentAccelInterval = 20;
-        }
-
-        // SPAWN CONTROLADO (2-7 SEGUNDOS)
-        if (currentTimeMillis - lastSpawnTime > nextSpawnDelay) {
+        if (currentTime - lastSpawnTime > nextSpawnDelay) {
             const types = Object.keys(WASTE_TYPES).filter(t => WASTE_TYPES[t].items.length > 0);
             const randomTypeKey = types[Math.floor(Math.random() * types.length)];
             const randomItemKey = WASTE_TYPES[randomTypeKey].items[Math.floor(Math.random() * WASTE_TYPES[randomTypeKey].items.length)];
-
-            if (isImageReady(randomItemKey)) {
-                items.push(new Trash(randomItemKey, WASTE_TYPES[randomTypeKey]));
-                lastSpawnTime = currentTimeMillis;
-                nextSpawnDelay = 2000 + Math.random() * 5000;
-            }
+            items.push(new Trash(randomItemKey, WASTE_TYPES[randomTypeKey]));
+            lastSpawnTime = currentTime;
+            nextSpawnDelay = 2000 + Math.random() * 4000;
         }
 
         for (let i = items.length - 1; i >= 0; i--) {
             items[i].update(); items[i].draw();
-            if (items[i].y + items[i].h > player.y + 25 && items[i].y < player.y + 75 &&
-                items[i].x + items[i].w > player.x + 10 && items[i].x < player.x + player.w - 10) {
-                if (items[i].type.id === currentMode.id) score += 10; else errors++;
-                items.splice(i, 1); updateHUD(); continue;
+            if (items[i].y + items[i].h > player.y + 20 && items[i].y < player.y + 70 &&
+                items[i].x + items[i].w > player.x && items[i].x < player.x + player.w) {
+                if (items[i].type.id === currentMode.id) { score += 10; } else { errors++; }
+                items.splice(i, 1);
+                document.getElementById('score-val').innerText = score;
+                document.getElementById('error-val').innerText = errors;
+                continue;
             }
-            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); updateHUD(); }
+            if (items[i].y > canvas.height) { errors++; items.splice(i, 1); document.getElementById('error-val').innerText = errors; }
         }
-        if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); }
+
+        if (errors >= 20) { gameActive = false; document.getElementById('end-screen').classList.remove('hidden'); document.getElementById('final-stats').innerText = `Pontos: ${score}`; }
     }
 </script>
 </body>
