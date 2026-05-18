@@ -39,7 +39,7 @@
 
         #game-area {
             position: relative;
-            width: 850px; /* Aumentado levemente para as 6 lixeiras */
+            width: 850px;
             height: 450px;
             background: linear-gradient(to bottom, #0f0c29, #24243e);
             border: 1px solid rgba(255,255,255,0.1);
@@ -70,26 +70,10 @@
             width: 100px;
         }
 
-        .bin-btn img { 
-            width: 75px; /* Ajustado para caber 6 */
-            height: 75px; 
-            object-fit: contain; 
-            margin-bottom: 5px; 
-        }
+        .bin-btn img { width: 75px; height: 75px; object-fit: contain; margin-bottom: 5px; }
+        .bin-btn span { font-family: 'Orbitron', sans-serif; font-size: 9px; color: white; font-weight: bold; }
 
-        .bin-btn span { 
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 9px; 
-            color: white; 
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .bin-btn.active {
-            filter: grayscale(0);
-            opacity: 1;
-            transform: scale(1.1);
-        }
+        .bin-btn.active { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
         .bin-btn.active img { filter: drop-shadow(0 0 15px var(--neon-green)); }
 
         .overlay {
@@ -129,6 +113,18 @@
 
         .stat { background: rgba(0, 0, 0, 0.6); padding: 8px 20px; border: 1px solid var(--neon-blue); }
         .stat.err { border-color: var(--neon-red); color: var(--neon-red); }
+
+        #speed-alert {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body>
@@ -139,20 +135,22 @@
             <div class="stat">PONTOS: <span id="score-val">0</span></div>
             <div style="text-align: center;">
                 <div class="stat" style="font-size: 0.8rem;">MODO: <span id="mode-text" style="color: #ff8c00;">ELETRÔNICO</span></div>
+                <div id="time-text" style="font-size: 0.7rem; margin-top: 5px;">TEMPO: 0s</div>
             </div>
             <div class="stat err">ERROS: <span id="error-val">0</span></div>
         </div>
 
+        <div id="speed-alert">VELOCIDADE AUMENTOU!</div>
+
         <div id="start-screen" class="overlay">
             <h1>ECOBOT 2026</h1>
-            <p>Use as SETAS para mover o Robô.<br>CLIQUE nas lixeiras abaixo para mudar o modo.</p>
+            <p>O lixo acelera com o tempo. Prepare-se!</p>
             <button onclick="startGame()">Iniciar Missão</button>
         </div>
 
         <div id="end-screen" class="overlay hidden">
             <h1>MISSÃO FINALIZADA</h1>
             <p id="final-stats"></p>
-            <button onclick="window.open('URL_DO_FORMULARIO')">Responder Pesquisa</button>
             <button onclick="location.reload()">Recomeçar</button>
         </div>
 
@@ -186,8 +184,11 @@
     const ctx = canvas.getContext('2d');
     
     let score = 0; let errors = 0; let gameActive = false;
-    let items = []; let frame = 0; let globalSpeedMultiplier = 1.0;
+    let items = []; let frame = 0; 
+    let globalSpeedMultiplier = 0.7; // Começa devagar
     let lastSpawnX = 0;
+    let lastAccelTime = 0;
+    let currentAccelInterval = 50; // Intervalo inicial de 50s
 
     const imageFiles = {
         botFront: '7.png', botRight: '8.png', botLeft: '9.png',
@@ -235,7 +236,6 @@
             this.speed = (2 + Math.random() * 2) * globalSpeedMultiplier;
             
             const keysArr = Object.keys(WASTE_TYPES);
-            // Sorteia apenas itens que temos sprites (ignora papel por enquanto se não tiver item)
             let typeKey;
             do { typeKey = keysArr[Math.floor(Math.random() * keysArr.length)]; } while (typeKey === 'PAPER');
 
@@ -253,20 +253,48 @@
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
-        gameActive = true; score = 0; errors = 0; globalSpeedMultiplier = 1.0; items = []; loop();
+        gameActive = true; score = 0; errors = 0; frame = 0;
+        globalSpeedMultiplier = 0.7; lastAccelTime = 0; currentAccelInterval = 50;
+        items = []; loop();
+    }
+
+    function showAlert() {
+        const alert = document.getElementById('speed-alert');
+        alert.style.opacity = "1";
+        setTimeout(() => { alert.style.opacity = "0"; }, 2000);
     }
 
     function loop() {
         if (!gameActive) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Movimentação
         if (keyState['ArrowLeft'] && player.x > 0) { player.x -= player.speed; player.sprite = 'botLeft'; }
         else if (keyState['ArrowRight'] && player.x < canvas.width - player.w) { player.x += player.speed; player.sprite = 'botRight'; }
         else { player.sprite = 'botFront'; }
+        
         if (images[player.sprite]) ctx.drawImage(images[player.sprite], player.x, player.y, player.w, player.h);
 
         frame++;
-        if (frame % 1000 === 0) globalSpeedMultiplier += 0.15;
-        if (frame % 90 === 0) items.push(new Trash());
+        const currentTime = Math.floor(frame / 60);
+        document.getElementById('time-text').innerText = `TEMPO: ${currentTime}s`;
+
+        // LÓGICA DE ACELERAÇÃO GRADATIVA (Conforme solicitado)
+        if (currentTime > 0 && (currentTime - lastAccelTime) >= currentAccelInterval) {
+            globalSpeedMultiplier += 0.15;
+            lastAccelTime = currentTime;
+            showAlert();
+
+            // Atualiza o próximo intervalo baseado no tempo total
+            if (currentTime >= 150 && currentTime < 190) currentAccelInterval = 40;
+            else if (currentTime >= 190 && currentTime < 220) currentAccelInterval = 30;
+            else if (currentTime >= 220) currentAccelInterval = 20;
+        }
+
+        // Spawn de itens (fica mais frequente conforme acelera)
+        if (frame % Math.max(30, Math.floor(90 / globalSpeedMultiplier)) === 0) {
+            items.push(new Trash());
+        }
 
         items.forEach((item, index) => {
             item.update(); item.draw();
@@ -277,6 +305,7 @@
             }
             if (item.y > canvas.height) { errors++; items.splice(index, 1); updateHUD(); }
         });
+
         if (errors >= 20) endGame();
         requestAnimationFrame(loop);
     }
@@ -289,7 +318,7 @@
     function endGame() {
         gameActive = false;
         document.getElementById('end-screen').classList.remove('hidden');
-        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Erros: ${errors}`;
+        document.getElementById('final-stats').innerHTML = `Pontos: ${score} | Tempo Vivo: ${Math.floor(frame/60)}s`;
     }
 </script>
 </body>
