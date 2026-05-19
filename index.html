@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoBot v3.2 - Collision Refined</title>
+    <title>EcoBot v3.3 - Physics Balanced</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --bg: #050505; }
@@ -43,13 +43,13 @@
         .hidden { display: none !important; }
         
         #loading-bar-wrap { width: 220px; height: 4px; background: #222; margin: 15px 0; border-radius: 2px; }
-        #loading-bar-fill { width: 0%; height: 100%; background: var(--neon-green); transition: width 0.2s; }
+        #loading-bar-fill { width: 0%; height: 100%; background: var(--neon-green); transition: width 0.3s; }
         .btn-action { padding: 12px 30px; background: none; border: 2px solid var(--neon-green); color: var(--neon-green); font-family: 'Orbitron'; font-weight: bold; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div id="console-terminal">SYSTEM >> Kernel v3.2 estável.</div>
+<div id="console-terminal">SYSTEM >> Calibragem de física v3.3 ativa.</div>
 
 <div id="main-shell">
     <div id="game-canvas-area">
@@ -61,7 +61,7 @@
 
         <div id="boot-screen" class="ui-layer">
             <h1 style="color: var(--neon-green); font-family: 'Orbitron'; letter-spacing: 3px;">ECOBOT 2026</h1>
-            <p id="boot-status" style="font-size: 9px; color: #666;">Sincronizando Hitbox e Sprites 85px...</p>
+            <p id="boot-status" style="font-size: 9px; color: #666;">Ajustando velocidade dos atuadores e gravidade...</p>
             <div id="loading-bar-wrap"><div id="loading-bar-fill"></div></div>
             <button id="launch-btn" class="btn-action hidden" onclick="startEngine()">EXECUTAR MISSÃO</button>
         </div>
@@ -89,7 +89,10 @@
     const ctx = canvas.getContext('2d');
     
     let engineActive = false, gamePaused = true, score = 0, errors = 0, items = [], frameCount = 0;
-    let gravityMultiplier = 0.12, lastSpawnTimestamp = 0, nextSpawnDelay = 3000; 
+    
+    // REDUÇÃO DA GRAVIDADE (0.12 -> 0.08) PARA UM INÍCIO MAIS LENTO
+    let gravityMultiplier = 0.08; 
+    let lastSpawnTimestamp = 0, nextSpawnDelay = 3500; 
 
     const assets = {
         bot: '7.png', botL: '8.png', botR: '9.png',
@@ -99,15 +102,6 @@
         mt1: 'aco metalico industrial.png', mt2: 'clip metalico.png', mt3: 'lata de refrigerante.png', mt4: 'panela de aluminio.png', mt5: 'parafuso metalico.png',
         gl1: 'garrafa de vidro quebrada.png',
         pl1: 'caneta plastica.png', pl2: 'garrafa pet.png', pl3: 'recipiente plastico.png'
-    };
-
-    const WASTE_SCHEMA = {
-        EWASTE:  { id: 0, color: '#ff8c00', btn: 'b-ewaste', pool: ['ew1','ew2','ew3','ew4'] },
-        PAPER:   { id: 1, color: '#00bfff', btn: 'b-paper',  pool: ['pa1','pa2','pa3'] },
-        ORGANIC: { id: 2, color: '#8b4513', btn: 'b-organic',pool: ['og1','og2','og3','og4'] },
-        METAL:   { id: 3, color: '#ffd700', btn: 'b-metal',  pool: ['mt1','mt2','mt3','mt4', 'mt5'] },
-        GLASS:   { id: 4, color: '#32cd32', btn: 'b-glass',  pool: ['gl1'] },
-        PLASTIC: { id: 5, color: '#ff4500', btn: 'b-plastic',pool: ['pl1','pl2','pl3'] }
     };
 
     const imageMap = {};
@@ -122,22 +116,21 @@
                     const img = new Image();
                     img.src = assets[key];
                     img.onload = () => { loaded++; document.getElementById('loading-bar-fill').style.width = `${(loaded/total)*100}%`; resolve(); };
-                    img.onerror = () => { resolve(); };
+                    img.onerror = () => resolve();
                     imageMap[key] = img;
                 });
             }));
             document.getElementById('launch-btn').classList.remove('hidden');
-        } catch (e) { term("FALHA CRÍTICA."); }
+        } catch (e) { term("ERRO DE CARREGAMENTO."); }
     }
 
-    // JOGADOR AUMENTADO (85x85)
+    // AJUSTE DO ROBÔ (85x85)
     const player = { currentCol: 2, targetX: 0, currentX: 0, y: 0, w: 85, h: 85, sprite: 'bot' };
-    const inputs = { left: false, right: false };
 
     function syncResolution() {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
-        player.y = canvas.height - 100; // Ajuste fino para o robô maior
+        player.y = canvas.height - 100;
         const colWidth = canvas.width / 6;
         player.currentX = (player.currentCol * colWidth) + (colWidth / 2) - (player.w / 2);
         player.targetX = player.currentX;
@@ -177,6 +170,16 @@
     function moveLeft() { if (player.currentCol > 0) { player.currentCol--; player.sprite = 'botL'; } }
     function moveRight() { if (player.currentCol < 5) { player.currentCol++; player.sprite = 'botR'; } }
 
+    const WASTE_SCHEMA = {
+        EWASTE:  { id: 0, color: '#ff8c00', btn: 'b-ewaste', pool: ['ew1','ew2','ew3','ew4'] },
+        PAPER:   { id: 1, color: '#00bfff', btn: 'b-paper',  pool: ['pa1','pa2','pa3'] },
+        ORGANIC: { id: 2, color: '#8b4513', btn: 'b-organic',pool: ['og1','og2','og3','og4'] },
+        METAL:   { id: 3, color: '#ffd700', btn: 'b-metal',  pool: ['mt1','mt2','mt3','mt4', 'mt5'] },
+        GLASS:   { id: 4, color: '#32cd32', btn: 'b-glass',  pool: ['gl1'] },
+        PLASTIC: { id: 5, color: '#ff4500', btn: 'b-plastic',pool: ['pl1','pl2','pl3'] }
+    };
+    let currentMode = WASTE_SCHEMA.EWASTE;
+
     function updateMode(m) {
         document.querySelectorAll('.bin-unit').forEach(u => u.classList.remove('active'));
         currentMode = WASTE_SCHEMA[m];
@@ -194,7 +197,8 @@
             this.y = -60;
             this.sprite = sprite;
             this.typeId = typeId;
-            this.speed = (1.3 + Math.random() * 1.6) * gravityMultiplier * 8;
+            // VELOCIDADE DE QUEDA REDUZIDA
+            this.speed = (1.0 + Math.random() * 1.2) * gravityMultiplier * 8;
         }
         update() { this.y += this.speed; }
         draw() { if(imageMap[this.sprite].complete) ctx.drawImage(imageMap[this.sprite], this.x, this.y, this.w, this.h); }
@@ -206,13 +210,13 @@
         
         const colWidth = canvas.width / 6;
         player.targetX = (player.currentCol * colWidth) + (colWidth / 2) - (player.w / 2);
-        player.currentX += (player.targetX - player.currentX) * 0.25;
+        
+        // MOVIMENTAÇÃO MAIS LENTA E SUAVE (Ajuste de 0.25 para 0.12)
+        player.currentX += (player.targetX - player.currentX) * 0.12;
 
         if (Math.abs(player.targetX - player.currentX) < 2) player.sprite = 'bot';
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // DESENHAR ROBÔ PRIMEIRO
         ctx.drawImage(imageMap[player.sprite], player.currentX, player.y, player.w, player.h);
 
         if (gamePaused) return;
@@ -224,27 +228,21 @@
             const randomItem = WASTE_SCHEMA[typeKey].pool[Math.floor(Math.random() * WASTE_SCHEMA[typeKey].pool.length)];
             items.push(new Trash(randomItem, WASTE_SCHEMA[typeKey].id));
             lastSpawnTimestamp = now;
-            nextSpawnDelay = 1800 + Math.random() * 4500;
+            nextSpawnDelay = 2200 + Math.random() * 4000;
         }
 
-        // LÓGICA DE COLETA REFORMULADA (O ITEM DESAPARECE ANTES DE SER DESENHADO SE HOUVER COLISÃO)
         for (let i = items.length - 1; i >= 0; i--) {
             items[i].update();
-            
-            // Verificação de Hitbox (Baseada no robô maior)
-            if (items[i].y + items[i].h > player.y + 10 && items[i].x + items[i].w > player.currentX && items[i].x < player.currentX + player.w) {
+            if (items[i].y + items[i].h > player.y + 15 && items[i].x + items[i].w > player.currentX && items[i].x < player.currentX + player.w) {
                 if (items[i].typeId === currentMode.id) score += 10; else errors++;
                 items.splice(i, 1);
                 updateStats();
-                continue; // Pula o desenho deste item, pois ele foi coletado
+                continue;
             } 
-            
             if (items[i].y > canvas.height) {
-                errors++;
-                items.splice(i, 1);
-                updateStats();
+                errors++; items.splice(i, 1); updateStats();
             } else {
-                items[i].draw(); // Só desenha se NÃO foi coletado e NÃO saiu da tela
+                items[i].draw();
             }
         }
         frameCount++;
@@ -253,7 +251,7 @@
     function updateStats() {
         document.getElementById('score-val').innerText = score;
         document.getElementById('err-val').innerText = errors;
-        if (errors >= 20) { engineActive = false; alert("Reciclagem Crítica! Revise suas categorias."); location.reload(); }
+        if (errors >= 20) { engineActive = false; alert("Limite de resíduos excedido. Reiniciando..."); location.reload(); }
     }
 
     loadAssets();
