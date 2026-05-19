@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoBot v3.4 - Precision Catch</title>
+    <title>EcoBot v3.5 - Collision Fine-Tuning</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --bg: #050505; }
@@ -49,7 +49,7 @@
 </head>
 <body>
 
-<div id="console-terminal">SYSTEM >> Calibragem de Colisão Central v3.4...</div>
+<div id="console-terminal">SYSTEM >> Calibragem de Colisão v3.5 (Ponto Inferior e +5px)...</div>
 
 <div id="main-shell">
     <div id="game-canvas-area">
@@ -61,7 +61,7 @@
 
         <div id="boot-screen" class="ui-layer">
             <h1 style="color: var(--neon-green); font-family: 'Orbitron'; letter-spacing: 3px;">ECOBOT 2026</h1>
-            <p id="boot-status" style="font-size: 9px; color: #666;">Configurando sensores de profundidade da lixeira...</p>
+            <p id="boot-status" style="font-size: 9px; color: #666;">Ajustando física para o ponto de encaixe da lixeira...</p>
             <div id="loading-bar-wrap"><div id="loading-bar-fill"></div></div>
             <button id="launch-btn" class="btn-action hidden" onclick="startEngine()">EXECUTAR MISSÃO</button>
         </div>
@@ -227,14 +227,22 @@
         for (let i = items.length - 1; i >= 0; i--) {
             items[i].update();
             
-            // LÓGICA DE COLISÃO CENTRALIZADA (TRASH CENTER vs ROBOT CENTER)
-            const trashCenterY = items[i].y + (items[i].h / 2);
-            const robotCenterY = player.y + (player.h / 2);
+            // LÓGICA DE COLISÃO REFINADA v3.5
+            //
+            // PONTO DE REFERÊNCIA DO LIXO: BASE INFERIOR
+            const trashBottomY = items[i].y + items[i].h; //
+            
+            // PONTO DE REFERÊNCIA DO ROBÔ: CENTRO DA LIXEIRA + 5px PARA CIMA
+            // player.h / 2 é o centro; player.y é o topo. Subtraímos 5 para subir.
+            const robotCatchY = player.y + (player.h / 2) - 5; //
+            
+            // CENTROS LATERAIS (EIXO X) PARA ALINHAMENTO
             const trashCenterX = items[i].x + (items[i].w / 2);
             const robotCenterX = player.currentX + (player.w / 2);
 
-            // Só coleta quando o CENTRO do lixo cruza o CENTRO do robô (onde está a lixeira)
-            if (trashCenterY > robotCenterY - 10 && trashCenterY < robotCenterY + 30 &&
+            // Só coleta quando a BASE do lixo cruza o ponto exato da LIXEIRA (+5px)
+            // A margem lateral (abs < 30) garante que o lixo precisa estar alinhado
+            if (trashBottomY > robotCatchY && trashBottomY < robotCatchY + 40 &&
                 Math.abs(trashCenterX - robotCenterX) < 30) {
                 
                 if (items[i].typeId === currentMode.id) score += 10; else errors++;
@@ -255,7 +263,7 @@
     function updateStats() {
         document.getElementById('score-val').innerText = score;
         document.getElementById('err-val').innerText = errors;
-        if (errors >= 20) { engineActive = false; alert("Reciclagem Crítica! Tente novamente."); location.reload(); }
+        if (errors >= 20) { engineActive = false; alert("Reciclagem Crítica! Verifique suas categorias."); location.reload(); }
     }
 
     loadAssets();
