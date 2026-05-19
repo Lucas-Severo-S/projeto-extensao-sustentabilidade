@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoBot v3.3 - Physics Balanced</title>
+    <title>EcoBot v3.4 - Precision Catch</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon-green: #39ff14; --neon-blue: #00f3ff; --neon-red: #ff3131; --bg: #050505; }
@@ -49,7 +49,7 @@
 </head>
 <body>
 
-<div id="console-terminal">SYSTEM >> Calibragem de física v3.3 ativa.</div>
+<div id="console-terminal">SYSTEM >> Calibragem de Colisão Central v3.4...</div>
 
 <div id="main-shell">
     <div id="game-canvas-area">
@@ -61,7 +61,7 @@
 
         <div id="boot-screen" class="ui-layer">
             <h1 style="color: var(--neon-green); font-family: 'Orbitron'; letter-spacing: 3px;">ECOBOT 2026</h1>
-            <p id="boot-status" style="font-size: 9px; color: #666;">Ajustando velocidade dos atuadores e gravidade...</p>
+            <p id="boot-status" style="font-size: 9px; color: #666;">Configurando sensores de profundidade da lixeira...</p>
             <div id="loading-bar-wrap"><div id="loading-bar-fill"></div></div>
             <button id="launch-btn" class="btn-action hidden" onclick="startEngine()">EXECUTAR MISSÃO</button>
         </div>
@@ -89,8 +89,6 @@
     const ctx = canvas.getContext('2d');
     
     let engineActive = false, gamePaused = true, score = 0, errors = 0, items = [], frameCount = 0;
-    
-    // REDUÇÃO DA GRAVIDADE (0.12 -> 0.08) PARA UM INÍCIO MAIS LENTO
     let gravityMultiplier = 0.08; 
     let lastSpawnTimestamp = 0, nextSpawnDelay = 3500; 
 
@@ -124,7 +122,6 @@
         } catch (e) { term("ERRO DE CARREGAMENTO."); }
     }
 
-    // AJUSTE DO ROBÔ (85x85)
     const player = { currentCol: 2, targetX: 0, currentX: 0, y: 0, w: 85, h: 85, sprite: 'bot' };
 
     function syncResolution() {
@@ -197,7 +194,6 @@
             this.y = -60;
             this.sprite = sprite;
             this.typeId = typeId;
-            // VELOCIDADE DE QUEDA REDUZIDA
             this.speed = (1.0 + Math.random() * 1.2) * gravityMultiplier * 8;
         }
         update() { this.y += this.speed; }
@@ -210,10 +206,7 @@
         
         const colWidth = canvas.width / 6;
         player.targetX = (player.currentCol * colWidth) + (colWidth / 2) - (player.w / 2);
-        
-        // MOVIMENTAÇÃO MAIS LENTA E SUAVE (Ajuste de 0.25 para 0.12)
         player.currentX += (player.targetX - player.currentX) * 0.12;
-
         if (Math.abs(player.targetX - player.currentX) < 2) player.sprite = 'bot';
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -233,12 +226,23 @@
 
         for (let i = items.length - 1; i >= 0; i--) {
             items[i].update();
-            if (items[i].y + items[i].h > player.y + 15 && items[i].x + items[i].w > player.currentX && items[i].x < player.currentX + player.w) {
+            
+            // LÓGICA DE COLISÃO CENTRALIZADA (TRASH CENTER vs ROBOT CENTER)
+            const trashCenterY = items[i].y + (items[i].h / 2);
+            const robotCenterY = player.y + (player.h / 2);
+            const trashCenterX = items[i].x + (items[i].w / 2);
+            const robotCenterX = player.currentX + (player.w / 2);
+
+            // Só coleta quando o CENTRO do lixo cruza o CENTRO do robô (onde está a lixeira)
+            if (trashCenterY > robotCenterY - 10 && trashCenterY < robotCenterY + 30 &&
+                Math.abs(trashCenterX - robotCenterX) < 30) {
+                
                 if (items[i].typeId === currentMode.id) score += 10; else errors++;
                 items.splice(i, 1);
                 updateStats();
                 continue;
             } 
+            
             if (items[i].y > canvas.height) {
                 errors++; items.splice(i, 1); updateStats();
             } else {
@@ -251,7 +255,7 @@
     function updateStats() {
         document.getElementById('score-val').innerText = score;
         document.getElementById('err-val').innerText = errors;
-        if (errors >= 20) { engineActive = false; alert("Limite de resíduos excedido. Reiniciando..."); location.reload(); }
+        if (errors >= 20) { engineActive = false; alert("Reciclagem Crítica! Tente novamente."); location.reload(); }
     }
 
     loadAssets();
